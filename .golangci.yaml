@@ -1,0 +1,12 @@
+run:
+  deadline: 10m
+  skip-dirs:
+    - temp
+  skip-files:
+    - ".*_gen.go$"
+  tests: false
+  sort-results: true
+linters:
+  enable-all: true
+  disable:
+    - gochecknoglobals
