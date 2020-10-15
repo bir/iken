@@ -9,7 +9,7 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-// InternalErrorFormat is the default error message returned for unhandled errors
+// InternalErrorFormat is the default error message returned for unhandled errors.
 const InternalErrorFormat = "Internal Server Error: %d"
 
 // ErrorHandlerFunc is useful to standardize the exception management of

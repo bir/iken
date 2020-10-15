@@ -76,7 +76,7 @@ func WithStack(e interface{}, skip int) error {
 	return &stackError{err: err, stack: &st}
 }
 
-// Frame is a simple view of the call stack frame
+// Frame is a simple view of the call stack frame.
 type Frame struct {
 	File string
 	Line int

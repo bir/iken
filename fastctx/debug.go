@@ -2,7 +2,7 @@ package fastctx
 
 import "github.com/valyala/fasthttp"
 
-// Field names used for logging ctx params
+// Field names used for logging ctx params.
 var (
 	ConnID     = "connID"
 	RequestNum = "requestNum"

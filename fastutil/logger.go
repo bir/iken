@@ -13,7 +13,7 @@ import (
 var (
 	// ApplicationJSON content-type.
 	ApplicationJSON = []byte("application/json")
-	// TextHTML content-type
+	// TextHTML content-type.
 	TextHTML = []byte("text/html")
 )
 
