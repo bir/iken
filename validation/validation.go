@@ -6,21 +6,15 @@ import (
 	"strings"
 )
 
+// Messages are the validation failures for a given field.
 type Messages []string
 
 func (mm Messages) Error() string {
 	return strings.Join(mm, ", ")
 }
 
+// Errors maps fields to the list of validation failures.
 type Errors map[string]Messages
-
-func Validate(object interface{}) error {
-	if v, ok := object.(interface{ Validate() error }); ok {
-		return v.Validate()
-	}
-
-	return nil
-}
 
 // Error returns the error string of Errors.
 func (ee Errors) Error() string {
@@ -54,6 +48,8 @@ func (ee Errors) Error() string {
 	return s.String()
 }
 
+// Add appends the field and msg to the current list of errors.  Add will initialize the Errors
+// object if it is not initialized.
 func (ee *Errors) Add(field, msg string) *Errors {
 	if *ee == nil {
 		*ee = Errors{}
@@ -80,19 +76,7 @@ func (ee *Errors) GetErr() error {
 	return ee
 }
 
+// New returns a single validation error for the field with msg.
 func New(field, msg string) error {
 	return (&Errors{}).Add(field, msg)
 }
-
-const (
-	MsgInvalidMaximum = "maximum"
-	MsgInvalidMinimum = "minimum"
-	MsgMultipleOf     = "multiple"
-	MsgMaxLength      = "max length"
-	MsgMinLength      = "min length"
-	MsgPatten         = "pattern"
-	MsgMaxItems       = "max items"
-	MsgMinItems       = "min items"
-	MsgRequired       = "required"
-	MsgEnum           = "enum"
-)
