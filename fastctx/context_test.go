@@ -82,6 +82,8 @@ func TestStd(t *testing.T) {
 }
 
 func setRequestID(ctx *fasthttp.RequestCtx) {
+	// Unsafe code ahead - no good alternatives.  This uses reflection and pointers
+	// to modify private variables.  Only used for testing.
 	pointerVal := reflect.ValueOf(ctx)
 	val := reflect.Indirect(pointerVal)
 
