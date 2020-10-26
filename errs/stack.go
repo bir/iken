@@ -91,7 +91,7 @@ func (f Frame) String() string {
 func ExtractStackFrame(err error) []Frame {
 	type stackTracer interface{ StackTrace() []uintptr }
 
-	stacker, ok := err.(stackTracer)
+	stacker, ok := err.(stackTracer) //nolint:errorlint // false positive
 	if !ok {
 		return nil
 	}

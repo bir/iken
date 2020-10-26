@@ -28,7 +28,7 @@ func (h hbNotifier) Send(msg interface{}, extra ...interface{}) (string, error) 
 func (h hbNotifier) FastSend(ctx *fasthttp.RequestCtx, msg interface{}, extra ...interface{}) (string, error) {
 	e, ok := msg.(error)
 	if ok {
-		err := honeybadger.Error{
+		err := honeybadger.Error{ //nolint: exhaustivestruct // false positive on private field
 			Message: e.Error(),
 			Class:   reflect.TypeOf(errs.Cause(e)).String(),
 			Stack:   mapStackTracerHB(e),

@@ -36,7 +36,7 @@ func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 		return
 	}
 
-	switch e := err.(type) {
+	switch e := err.(type) { //nolint:errorlint // false positive
 	case *json.SyntaxError:
 		if err := JSONWrite(ctx, fasthttp.StatusBadRequest, e.Error()); err != nil {
 			panic(err)

@@ -67,7 +67,7 @@ func QueryInt32Optional(ctx *fasthttp.RequestCtx, key string) *int32 {
 func QueryInt32(ctx *fasthttp.RequestCtx, key string) (int32, error) {
 	out, err := ctx.QueryArgs().GetUint(key)
 	if err != nil {
-		return 0, err
+		return 0, ErrRequired
 	}
 
 	return int32(out), nil
@@ -87,7 +87,7 @@ func QueryInt64Optional(ctx *fasthttp.RequestCtx, key string) *int64 {
 func QueryInt64(ctx *fasthttp.RequestCtx, key string) (int64, error) {
 	out, err := ctx.QueryArgs().GetUint(key)
 	if err != nil {
-		return 0, err
+		return 0, ErrRequired
 	}
 
 	return int64(out), nil

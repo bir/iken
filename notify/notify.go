@@ -88,7 +88,7 @@ func (d debug) FastSend(ctx *fasthttp.RequestCtx, msg interface{}, extra ...inte
 
 	_, err := fmt.Fprintf(d.w, "NOTIFY:\n%+v\n", msg)
 	if err != nil {
-		return "", err
+		return "", err //nolint:wrapcheck // false positive
 	}
 
 	e, ok := msg.(error)
@@ -97,7 +97,7 @@ func (d debug) FastSend(ctx *fasthttp.RequestCtx, msg interface{}, extra ...inte
 		if len(ss) > 0 {
 			_, err := fmt.Fprintf(d.w, "STACK:\n%+v\n", ss)
 			if err != nil {
-				return "", err
+				return "", err //nolint:wrapcheck // false positive
 			}
 		}
 	}
@@ -105,14 +105,14 @@ func (d debug) FastSend(ctx *fasthttp.RequestCtx, msg interface{}, extra ...inte
 	if extra != nil {
 		_, err := fmt.Fprintf(d.w, "Extra:\n%+v\n", extra)
 		if err != nil {
-			return "", err
+			return "", err //nolint:wrapcheck // false positive
 		}
 	}
 
 	if ctx != nil {
 		_, err := fmt.Fprintf(d.w, "Context:\n%+v\n", ctx)
 		if err != nil {
-			return "", err
+			return "", err //nolint:wrapcheck // false positive
 		}
 	}
 
