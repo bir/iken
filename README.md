@@ -3,6 +3,7 @@
 [![forthebadge](https://forthebadge.com/images/badges/made-with-go.svg)](https://forthebadge.com)
 [![forthebadge](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com)
 [![forthebadge](https://forthebadge.com/images/badges/open-source.svg)](https://forthebadge.com)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fbir%2Fiken.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fbir%2Fiken?ref=badge_shield)
 
 **iken** is an _opinionated_ library for building apps in go.
 
@@ -54,3 +55,7 @@ Standardized handling of errors in a Fast HTTP request flow.
 ## pgxzero
 
 ## validation
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fbir%2Fiken.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fbir%2Fiken?ref=badge_large)
