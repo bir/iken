@@ -3,7 +3,7 @@ package pgxzero
 import (
 	"context"
 
-	"github.com/bir/iken/fastctx"
+	"github.com/bir/iken/httputil"
 	"github.com/jackc/pgx/v4"
 	"github.com/rs/zerolog"
 )
@@ -37,9 +37,9 @@ func (l *Logger) Log(ctx context.Context, level pgx.LogLevel, msg string, data m
 		lvl = zerolog.DebugLevel
 	}
 
-	if data == nil || data["request_id"] == nil {
-		requestID := fastctx.GetRequestID(ctx)
-		if requestID > 0 {
+	if ctx != nil && (data == nil || data["request_id"] == nil) {
+		requestID := httputil.GetID(ctx)
+		if requestID != 0 {
 			if data == nil {
 				data = make(map[string]interface{})
 			}

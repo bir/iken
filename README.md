@@ -19,10 +19,10 @@
 
 # Concrete Opinions
 
-1. [Fast HTTP](https://github.com/valyala/fasthttp) is the preferred http server framework
-1. Postgres is the preferred SQL DB
-1. [pgx](https://github.com/jackc/pgx) is the preferred Postgres library
-1. [zerolog](https://github.com/rs/zerolog) is the preferred Logger
+1. net/http is the preferred handler
+2. Postgres is the preferred SQL DB
+3. [pgx](https://github.com/jackc/pgx) is the preferred Postgres library
+4. [zerolog](https://github.com/rs/zerolog) is the preferred Logger
 
 _Preferred_ is the keyword, as the packages in **iken** ease the support for these libraries, but do not prevent any
 other options.
@@ -41,15 +41,13 @@ nil.
 `WithStack` provides an easy stack traced error with options to ignore depth. Useful for tracking panics caught in
 middleware. It also provides some utilities for marshalling to logging for easy of logging.
 
-## fastutil
+## httputil
 
-Collection of minor tools for use with Fast HTTP.
+Collection of minor tools for use with HTTP.
 
 ### ErrorHandler
 
-Standardized handling of errors in a Fast HTTP request flow.
-
-## notify
+Standardized handling of errors in an HTTP request flow.
 
 ## pgxzero
 

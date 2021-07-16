@@ -1,26 +1,26 @@
 package chain_test
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/bir/iken/chain"
-	"github.com/valyala/fasthttp"
 )
 
 func prefixLetter(letter string) chain.Constructor {
-	return func(h fasthttp.RequestHandler) fasthttp.RequestHandler {
-		return func(ctx *fasthttp.RequestCtx) {
-			_, _ = ctx.WriteString(letter)
-			h(ctx)
-		}
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte(letter))
+			h.ServeHTTP(w, r)
+		})
 	}
 }
 
-func nop(*fasthttp.RequestCtx) {
+func nop(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestNew(t *testing.T) {
-
 	c := chain.New(prefixLetter("a"),
 		prefixLetter("b"),
 		prefixLetter("c"),
@@ -56,7 +56,8 @@ func TestNew(t *testing.T) {
 }
 
 func testHandler(c2 chain.Chain) string {
-	ctx := &fasthttp.RequestCtx{}
-	c2.Handler(nop)(ctx)
-	return string(ctx.Response.Body())
+	r := httptest.NewRecorder()
+	c2.Handler(http.HandlerFunc(nop)).ServeHTTP(r, nil)
+	r.Body.String()
+	return r.Body.String()
 }

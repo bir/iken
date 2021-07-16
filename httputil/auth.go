@@ -1,4 +1,4 @@
-package fastutil
+package httputil
 
 // AuthError encompasses Authentication and Authorization errors.
 type AuthError string

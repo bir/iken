@@ -3,35 +3,20 @@ package pgxzero_test
 import (
 	"bytes"
 	"context"
-	"reflect"
 	"testing"
-	"unsafe"
 
-	"github.com/bir/iken/fastctx"
+	"github.com/bir/iken/httputil"
 	"github.com/bir/iken/pgxzero"
 	"github.com/jackc/pgx/v4"
 	"github.com/rs/zerolog"
-	"github.com/valyala/fasthttp"
 )
 
-func setRequestID(ctx *fasthttp.RequestCtx) {
-	pointerVal := reflect.ValueOf(ctx)
-	val := reflect.Indirect(pointerVal)
-
-	member := val.FieldByName("connRequestNum")
-	ptrToY := unsafe.Pointer(member.UnsafeAddr())
-	realPtrToY := (*uint64)(ptrToY)
-	*realPtrToY = 121
-}
-
 func TestLogger_Log(t *testing.T) {
-	fastCtx := &fasthttp.RequestCtx{}
-	setRequestID(fastCtx)
-	ctx := fastctx.SetToStd(context.TODO(), fastCtx)
 
 	dataWithRequest := map[string]interface{}{"request_id": 123}
 	dataWithoutRequest := map[string]interface{}{"other": 123}
 
+	ctx := httputil.SetID(context.Background(), 121)
 	tests := []struct {
 		name  string
 		ctx   context.Context

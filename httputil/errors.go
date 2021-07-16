@@ -1,13 +1,12 @@
-package fastutil
+package httputil
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 
-	"github.com/bir/iken/fastctx"
 	"github.com/bir/iken/validation"
-	"github.com/valyala/fasthttp"
 )
 
 // InternalErrorFormat is the default error message returned for unhandled errors.
@@ -15,7 +14,7 @@ const InternalErrorFormat = "Internal Server Error: %d"
 
 // ErrorHandlerFunc is useful to standardize the exception management of
 // requests.
-type ErrorHandlerFunc func(*fasthttp.RequestCtx, error)
+type ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 
 // ErrorHandler provides some standard handling for errors in an http request
 // flow.
@@ -31,27 +30,27 @@ type ErrorHandlerFunc func(*fasthttp.RequestCtx, error)
 //
 // Unhandled errors are added to the ctx and return "Internal Server Error" with
 // the request ID to aid with troubleshooting.
-func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
+func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	if err == nil {
 		return
 	}
 
 	switch e := err.(type) { //nolint:errorlint // false positive
 	case *json.SyntaxError:
-		if err := JSONWrite(ctx, fasthttp.StatusBadRequest, e.Error()); err != nil {
+		if err := JSONWrite(w, http.StatusBadRequest, e.Error()); err != nil {
 			panic(err)
 		}
 
 		return
 	case *validation.Errors:
-		if err := JSONWrite(ctx, fasthttp.StatusBadRequest, e); err != nil {
+		if err := JSONWrite(w, http.StatusBadRequest, e); err != nil {
 			panic(err)
 		}
 
 		return
 	case AuthError:
 		if errors.Is(e, ErrForbidden) {
-			if err := JSONWrite(ctx, fasthttp.StatusForbidden, e); err != nil {
+			if err := JSONWrite(w, http.StatusForbidden, e); err != nil {
 				panic(err)
 			}
 
@@ -59,19 +58,18 @@ func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 		}
 
 		if errors.Is(e, ErrBasicAuthenticate) {
-			ctx.Response.Header.Set("WWW-Authenticate", "Basic realm=Restricted")
-			ctx.Error(fasthttp.StatusMessage(fasthttp.StatusUnauthorized), fasthttp.StatusUnauthorized)
+			w.Header().Set("WWW-Authenticate", "Basic realm=Restricted")
+			w.WriteHeader(http.StatusUnauthorized)
 
 			return
 		}
 
-		if err := JSONWrite(ctx, fasthttp.StatusUnauthorized, e); err != nil {
+		if err := JSONWrite(w, http.StatusUnauthorized, e); err != nil {
 			panic(err)
 		}
 
 		return
 	}
 
-	fastctx.SetError(ctx, err)
-	ctx.Error(fmt.Sprintf(InternalErrorFormat, ctx.ID()), fasthttp.StatusInternalServerError)
+	http.Error(w, fmt.Sprintf(InternalErrorFormat, GetID(r.Context())), http.StatusInternalServerError)
 }

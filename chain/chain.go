@@ -1,11 +1,11 @@
 package chain
 
 import (
-	"github.com/valyala/fasthttp"
+	"net/http"
 )
 
 // Constructor is the function contract used to make RequestHandlers.
-type Constructor func(fasthttp.RequestHandler) fasthttp.RequestHandler
+type Constructor func(http.Handler) http.Handler
 
 // Chain enables easy definition of custom handler chains.
 type Chain []Constructor
@@ -16,7 +16,7 @@ func New(cc ...Constructor) Chain {
 }
 
 // Handler compiles the chain to a single RequestHandler.
-func (c Chain) Handler(h fasthttp.RequestHandler) fasthttp.RequestHandler {
+func (c Chain) Handler(h http.Handler) http.Handler {
 	l := len(c) - 1
 	// Execute in reverse order
 	for i := range c {

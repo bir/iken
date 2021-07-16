@@ -14,7 +14,7 @@ import (
 
 // funcName removes the path prefix component (redundant to the file name) of a function's name reported by func.Name().
 //
-// example: "github.com/fasthttp/router.(*Router).Handler" => "(*Router).Handler"
+// example: "github.com/iken/router.(*Router).Handler" => "(*Router).Handler"
 //
 func funcName(name string) string {
 	i := strings.LastIndex(name, "/")
