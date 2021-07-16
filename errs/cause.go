@@ -9,12 +9,12 @@ package errs
 func Cause(err error) error {
 	u, ok := err.(interface{ Unwrap() error }) //nolint:errorlint // false positive
 	if ok {
-		return u.Unwrap()
+		return u.Unwrap() //nolint:wrapcheck // defeats the whole point
 	}
 
 	c, ok := err.(interface{ Cause() error }) //nolint:errorlint // false positive
 	if ok {
-		return c.Cause()
+		return c.Cause() //nolint:wrapcheck // defeats the whole point
 	}
 
 	return nil

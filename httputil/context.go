@@ -4,9 +4,11 @@ import (
 	"context"
 )
 
+type ContextKey string
+
 const (
-	opCtx = "iken.op"
-	opID  = "request_id"
+	opCtx ContextKey = "iken.op"
+	opID  ContextKey = "request_id"
 )
 
 // SetOp stores a label for the current request.  Useful for developer friendly log messages.

@@ -10,5 +10,5 @@ func JSONWrite(w http.ResponseWriter, code int, obj interface{}) error {
 	w.Header().Set(ContentType, ApplicationJSON)
 	w.WriteHeader(code)
 
-	return json.NewEncoder(w).Encode(obj)
+	return json.NewEncoder(w).Encode(obj) //nolint: wrapcheck
 }

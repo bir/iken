@@ -10,3 +10,10 @@ linters:
   enable-all: true
   disable:
     - gochecknoglobals
+    - interfacer
+    - golint
+    - maligned
+    - scopelint
+linters-settings:
+  cyclop:
+    max-complexity: 15
