@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"reflect"
 	"time"
 
@@ -30,10 +31,32 @@ func StringToLocationHookFunc(f reflect.Type, t reflect.Type, data interface{}) 
 	return l, nil
 }
 
+// ErrInvalidURL is returned when a URL tag fails to parse.
+var ErrInvalidURL = errors.New("failed parsing url")
+
+// StringToURLHookFunc converts strings to *time.Location.
+func StringToURLHookFunc(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+	if f.Kind() != reflect.String {
+		return data, nil
+	}
+
+	if t != reflect.TypeOf(&url.URL{}) {
+		return data, nil
+	}
+
+	u, err := url.Parse(data.(string))
+	if err != nil {
+		return nil, fmt.Errorf("%w: `%v`", ErrInvalidURL, data)
+	}
+
+	return u, nil
+}
+
 func defaultDecoderConfig(c *mapstructure.DecoderConfig) {
 	c.TagName = TagName
 	c.DecodeHook = mapstructure.ComposeDecodeHookFunc(
 		StringToLocationHookFunc,
+		StringToURLHookFunc,
 		mapstructure.StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","))
 }
