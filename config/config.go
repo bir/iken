@@ -23,6 +23,8 @@ var (
 	ErrInvalidConfigObject = errors.New("config must be a pointer type")
 	// ErrInvalidResolver is returned when a struct tag references a resolver that is not found.
 	ErrInvalidResolver = errors.New("invalid resolver")
+	// ErrInvalidTag is returned when a struct tag is improperly defined, e.g. `env:","`.
+	ErrInvalidTag = errors.New("invalid tag")
 )
 
 // Resolver is used to map a key to a value.  Examples are custom serialization used for Postgres Connection URL
@@ -49,11 +51,20 @@ const (
 //    }
 func parseTag(tag string) error {
 	args := strings.Split(tag, ",")
+
+	key := strings.TrimSpace(args[keyPos])
+	if key == "" {
+		return fmt.Errorf("%w: `%s`", ErrInvalidTag, tag)
+	}
+
+	err := viper.BindEnv(key)
+	if err != nil {
+		return fmt.Errorf("binding tag: `%s`: %w", tag, err)
+	}
+
 	if len(args) <= 1 {
 		return nil
 	}
-
-	key := strings.TrimSpace(args[keyPos])
 
 	def := strings.TrimSpace(args[defaultPos])
 	if def != "" {
@@ -103,13 +114,15 @@ func Load(cfg interface{}) error {
 	v = reflect.Indirect(v)
 
 	for i := 0; i < v.NumField(); i++ {
-		tag := v.Type().Field(i).Tag.Get(TagName)
+		f := v.Type().Field(i)
+
+		tag := f.Tag.Get(TagName)
 		if tag == "" || tag == "-" {
 			continue
 		}
 
 		if err = parseTag(tag); err != nil {
-			return fmt.Errorf("error parsing tag: %w", err)
+			return fmt.Errorf("error parsing %s tag on field %s: %w", TagName, f.Name, err)
 		}
 	}
 

@@ -40,7 +40,7 @@ func StringToURLHookFunc(f reflect.Type, t reflect.Type, data interface{}) (inte
 		return data, nil
 	}
 
-	if t != reflect.TypeOf(&url.URL{}) {
+	if t != reflect.TypeOf(&url.URL{}) { //nolint:exhaustivestruct
 		return data, nil
 	}
 
