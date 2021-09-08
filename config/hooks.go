@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/spf13/cast"
 )
 
 // ErrInvalidLocation is returned when a Location tag fails to load.
@@ -29,6 +30,19 @@ func StringToLocationHookFunc(f reflect.Type, t reflect.Type, data interface{}) 
 	}
 
 	return l, nil
+}
+
+// StringToMapStringStringHookFunc converts strings to *time.Location.
+func StringToMapStringStringHookFunc(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+	if f.Kind() != reflect.String {
+		return data, nil
+	}
+
+	if t != reflect.TypeOf(map[string]string{}) {
+		return data, nil
+	}
+
+	return cast.ToStringMapString(data), nil
 }
 
 // ErrInvalidURL is returned when a URL tag fails to parse.
@@ -56,6 +70,7 @@ func defaultDecoderConfig(c *mapstructure.DecoderConfig) {
 	c.TagName = TagName
 	c.DecodeHook = mapstructure.ComposeDecodeHookFunc(
 		StringToLocationHookFunc,
+		StringToMapStringStringHookFunc,
 		StringToURLHookFunc,
 		mapstructure.StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","))

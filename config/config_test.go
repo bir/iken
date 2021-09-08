@@ -93,10 +93,63 @@ func TestSetup(t *testing.T) {
 	}
 }
 
+type ComplexConfig struct {
+	TestMap    map[string]string `env:"TEST_MAP"`
+}
+
+func TestComplex(t *testing.T) {
+	defaultResolvers := config.Resolvers
+	defaultConfigFile := config.File
+
+	tests := []struct {
+		name    string
+		pre     func()
+		cfg     interface{}
+		env     map[string]string
+		json    string
+		wantErr bool
+	}{
+		{"defaults", nil, &ComplexConfig{}, nil, `{"TestMap":{"one":"1","two":"2"}}`, false},
+		{"EmptyEnv", func() { config.File = ".envEMPTY" }, &ComplexConfig{}, nil, `{"TestMap":null}`, false},
+		{"BadMap", nil, &ComplexConfig{}, map[string]string{"TEST_MAP": "FOO"}, `{"TestMap":{}}`, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config.ApplicationName = "test"
+			config.Resolvers = defaultResolvers
+			config.File = defaultConfigFile
+			if tt.pre != nil {
+				tt.pre()
+			}
+
+			viper.Reset()
+			os.Clearenv()
+			for k, v := range tt.env {
+				os.Setenv(k, v)
+			}
+
+			if err := config.Load(tt.cfg); (err != nil) != tt.wantErr {
+				t.Errorf("Load() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			b, err := json.Marshal(tt.cfg)
+			if err != nil {
+				t.Errorf("json.Marshall %v", err)
+			}
+
+			if string(b) != tt.json {
+				t.Errorf("got \n%v, want \n%v", string(b), tt.json)
+			}
+		})
+	}
+}
+
 type ExampleConfig struct {
-	DebugMode bool   `env:"DEBUG, false"`
-	Port      int    `env:"PORT, 3000"`
-	DB        string `env:"DB,localhost,pg"`
+	DebugMode bool     `env:"DEBUG, false"`
+	Port      int      `env:"PORT, 3000"`
+	DB        string   `env:"DB,localhost,pg"`
+	Test      []string `env:"TEST_ARRAY"`
 }
 
 func ExampleLoad() {
@@ -105,4 +158,17 @@ func ExampleLoad() {
 	fmt.Printf("DebugMode=%v\n", cfg.DebugMode)
 	fmt.Printf("Port=%v\n", cfg.Port)
 	fmt.Printf("DB=%v\n", cfg.DB)
+}
+
+func TestFoo(t *testing.T) {
+	os.Setenv("TEST_ARRAY", "1 2 3")
+	os.Setenv("TEST_ARRAY2", "1 2 3")
+
+	cfg := ExampleConfig{}
+
+	config.Load(&cfg)
+	test := viper.GetStringSlice("TEST_ARRAY")
+	fmt.Printf("TEST=%#v\n", cfg.Test)
+	fmt.Printf("test=%#v\n", test)
+
 }
