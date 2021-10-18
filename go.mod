@@ -3,17 +3,15 @@ module github.com/bir/iken
 go 1.17
 
 require (
-	github.com/gopherjs/gopherjs v0.0.0-20210707094841-eea289f08d45 // indirect
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/kr/text v0.2.0 // indirect
-	github.com/mitchellh/mapstructure v1.4.1
+	github.com/mitchellh/mapstructure v1.4.2
 	github.com/pkg/errors v0.9.1
-	github.com/rs/zerolog v1.24.0
-	github.com/smartystreets/assertions v1.2.0 // indirect
+	github.com/rs/zerolog v1.25.0
 	github.com/spf13/cast v1.4.1
-	github.com/spf13/viper v1.8.1
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
-	golang.org/x/sys v0.0.0-20210908160347-a851e7ddeee0 // indirect
+	github.com/spf13/viper v1.9.0
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
+	golang.org/x/sys v0.0.0-20211015200801-69063c4bb744 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
 
@@ -34,6 +32,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	gopkg.in/ini.v1 v1.63.0 // indirect
+	gopkg.in/ini.v1 v1.63.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
