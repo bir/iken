@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// Ported from go stdlib httputil.dump.  Tweaked to split the header and body into separate functions for more flexible logging.
-// Header is returned as a map[string]string for ease of handling.  Strictly a logging utility.
+// Ported from go stdlib httputil.dump.  Tweaked to split the header and body into separate functions for more
+// flexible logging. Header is returned as a map[string]string for ease of handling.  Strictly a logging utility.
 
 func DumpHeader(req *http.Request) map[string]string {
 	out := map[string]string{}
@@ -58,8 +58,10 @@ func DumpBody(req *http.Request) ([]byte, error) {
 		return nil, nil
 	}
 
-	var err error
-	var save io.ReadCloser
+	var (
+		err  error
+		save io.ReadCloser
+	)
 
 	save, req.Body, err = drainBody(req.Body)
 	if err != nil {
@@ -111,6 +113,7 @@ func valueOrDefault(value, def string) string {
 	if value != "" {
 		return value
 	}
+
 	return def
 }
 
@@ -129,11 +132,11 @@ func drainBody(b io.ReadCloser) (r1, r2 io.ReadCloser, err error) {
 	var buf bytes.Buffer
 
 	if _, err = buf.ReadFrom(b); err != nil {
-		return nil, b, err
+		return nil, b, fmt.Errorf("buf.ReadFrom:%w", err)
 	}
 
 	if err = b.Close(); err != nil {
-		return nil, b, err
+		return nil, b, fmt.Errorf("b.Close:%w", err)
 	}
 
 	return io.NopCloser(&buf), io.NopCloser(bytes.NewReader(buf.Bytes())), nil

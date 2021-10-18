@@ -7,14 +7,14 @@ import (
 )
 
 // Messages are the validation failures for a given field.
-type Messages []string
+type Messages []string //nolint: errname
 
 func (mm Messages) Error() string {
 	return strings.Join(mm, ", ")
 }
 
 // Errors maps fields to the list of validation failures.
-type Errors map[string]Messages
+type Errors map[string]Messages //nolint: errname
 
 // Error returns the error string of Errors.
 func (ee Errors) Error() string {
