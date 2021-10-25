@@ -7,11 +7,13 @@ import (
 
 func EndOfDay(t time.Time) time.Time {
 	year, month, day := t.Date()
+
 	return time.Date(year, month, day, 23, 59, 0, 0, t.Location())
 }
 
 func EndOfYear(t time.Time) time.Time {
 	year, _, _ := t.Date()
+
 	return time.Date(year, 12, 31, 23, 59, 0, 0, t.Location())
 }
 
@@ -55,9 +57,8 @@ func ToTime(duration string, location *time.Location) (time.Time, error) {
 
 	d, err := time.ParseDuration(duration)
 	if err != nil {
-		return time.Time{}, err
+		return time.Time{}, err // nolint
 	}
 
 	return t.Add(d), nil
-
 }
