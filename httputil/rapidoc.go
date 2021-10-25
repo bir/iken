@@ -7,7 +7,7 @@ import (
 	"path"
 )
 
-// RapiDocOpts configures the RapiDoc middlewares
+// RapiDocOpts configures the RapiDoc middlewares.
 type RapiDocOpts struct {
 	// BasePath for the UI path, defaults to: /
 	BasePath string
@@ -21,20 +21,24 @@ type RapiDocOpts struct {
 	Title string
 }
 
-// EnsureDefaults in case some options are missing
-func (r *RapiDocOpts) EnsureDefaults() {
+// Defaults for all options.
+func (r *RapiDocOpts) Defaults() {
 	if r.BasePath == "" {
 		r.BasePath = "/"
 	}
+
 	if r.Path == "" {
 		r.Path = "docs"
 	}
+
 	if r.SpecURL == "" {
 		r.SpecURL = "/swagger.json"
 	}
+
 	if r.RapiDocURL == "" {
 		r.RapiDocURL = rapidocLatest
 	}
+
 	if r.Title == "" {
 		r.Title = "API Documentation"
 	}
@@ -45,7 +49,7 @@ func (r *RapiDocOpts) EnsureDefaults() {
 //
 
 func RapiDoc(opts RapiDocOpts) func(http.Handler) http.Handler {
-	opts.EnsureDefaults()
+	opts.Defaults()
 
 	pth := path.Join(opts.BasePath, opts.Path)
 	tmpl := template.Must(template.New("rapidoc").Parse(rapidocTemplate))
@@ -61,6 +65,7 @@ func RapiDoc(opts RapiDocOpts) func(http.Handler) http.Handler {
 				rw.WriteHeader(http.StatusOK)
 
 				_, _ = rw.Write(b)
+
 				return
 			}
 

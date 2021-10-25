@@ -10,7 +10,7 @@ type ResponseWrapper struct {
 	bytes  int
 }
 
-// NewWrapResponse wraps
+// NewWrapResponse wraps http.ResponseWriter and tracks status and bytes written.
 func NewWrapResponse(w http.ResponseWriter) *ResponseWrapper {
 	return &ResponseWrapper{w, 0, 0}
 }
@@ -27,7 +27,7 @@ func (rw *ResponseWrapper) Write(buf []byte) (int, error) {
 	n, err := rw.ResponseWriter.Write(buf)
 	rw.bytes += n
 
-	return n, err
+	return n, err // nolint
 }
 
 func (rw *ResponseWrapper) Status() int {
