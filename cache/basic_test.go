@@ -13,7 +13,7 @@ import (
 )
 
 func ExampleCache() {
-	c := cache.NewCache[string, int]()
+	c := cache.NewBasic[string, int]()
 	c.Set("a", 1)
 	out, ok := c.Get("a")
 	fmt.Println(out, ok)
@@ -43,8 +43,11 @@ func randString(length int) string {
 	return base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(randBytes)
 }
 
+// Type assertion
+var _ cache.Cache[string, string] = cache.NewBasic[string, string]()
+
 func TestCache(t *testing.T) {
-	c := cache.NewCache[string, int]()
+	c := cache.NewBasic[string, int]()
 	// Empty
 	v, ok := c.Get("a")
 	assert.Equal(t, 0, v)
@@ -93,7 +96,7 @@ func TestCache(t *testing.T) {
 }
 
 func TestMultiThread(t *testing.T) {
-	c := cache.NewCache[int, string]()
+	c := cache.NewBasic[int, string]()
 	var wg sync.WaitGroup
 	for i := int64(0); i < 100; i++ {
 		wg.Add(1)

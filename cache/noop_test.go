@@ -7,6 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Type assertion
+var _ cache.Cache[string, string] = &cache.NoOpCache[string, string]{}
+
 func TestNoOpCache(t *testing.T) {
 	c := cache.NewNoOpCache[string, int]()
 	// Empty
