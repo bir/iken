@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+var NowFunc = time.Now
+
 func EndOfDay(t time.Time) time.Time {
 	year, month, day := t.Date()
 
@@ -32,7 +34,7 @@ func EndOfYear(t time.Time) time.Time {
 //   "30m" = 30 minutes
 //   "" = now
 func ToTime(duration string, location *time.Location) (time.Time, error) {
-	t := time.Now()
+	t := NowFunc()
 	if location != nil {
 		t = t.In(location)
 	}

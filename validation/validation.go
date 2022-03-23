@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/bir/iken/strutil"
 )
 
 // Messages are the validation failures for a given field.
@@ -22,30 +24,9 @@ func (ee Errors) Error() string {
 		return ""
 	}
 
-	keys := make([]string, len(ee))
-
-	i := 0
-
-	for key := range ee {
-		keys[i] = key
-		i++
-	}
-
-	sort.Strings(keys)
-
-	var s strings.Builder
-
-	for i, key := range keys {
-		if i > 0 {
-			s.WriteString("; ")
-		}
-
-		_, _ = fmt.Fprintf(&s, "%v: %v", key, (ee)[key].Error())
-	}
-
-	s.WriteString(".")
-
-	return s.String()
+	return strutil.Joiner(ee.Keys(), "", "; ", ".", func(key string) string {
+		return fmt.Sprintf("%v: %v", key, ee[key].Error())
+	})
 }
 
 // Add appends the field and msg to the current list of errors.  Add will initialize the Errors
@@ -74,6 +55,20 @@ func (ee *Errors) GetErr() error {
 	}
 
 	return ee
+}
+
+func (ee Errors) Keys() []string {
+	keys := make([]string, len(ee))
+	i := 0
+
+	for key := range ee {
+		keys[i] = key
+		i++
+	}
+
+	sort.Strings(keys)
+
+	return keys
 }
 
 // New returns a single validation error for the field with msg.

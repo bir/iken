@@ -82,11 +82,11 @@ func DumpBody(req *http.Request) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func dumpBody(req *http.Request, b io.Writer, chunked bool) error {
-	w := b
+func dumpBody(req *http.Request, body io.Writer, chunked bool) error {
+	w := body
 
 	if chunked {
-		w = httputil.NewChunkedWriter(b)
+		w = httputil.NewChunkedWriter(body)
 	}
 
 	_, err := io.Copy(w, req.Body)
@@ -95,12 +95,15 @@ func dumpBody(req *http.Request, b io.Writer, chunked bool) error {
 	}
 
 	if chunked {
-		err = w.(io.Closer).Close()
+		if closer, ok := w.(io.Closer); ok {
+			err = closer.Close()
+		}
+
 		if err != nil {
 			return fmt.Errorf("close:%w", err)
 		}
 
-		_, err = io.WriteString(b, "\r\n")
+		_, err = io.WriteString(body, "\r\n")
 		if err != nil {
 			return fmt.Errorf("io.WriteString:%w", err)
 		}
@@ -123,20 +126,20 @@ var reqWriteExcludeHeaderDump = map[string]bool{
 	"Trailer":           true,
 }
 
-func drainBody(b io.ReadCloser) (r1, r2 io.ReadCloser, err error) {
-	if b == nil || b == http.NoBody {
+func drainBody(body io.ReadCloser) (r1, r2 io.ReadCloser, err error) {
+	if body == nil || body == http.NoBody {
 		// No copying needed. Preserve the magic sentinel meaning of NoBody.
 		return http.NoBody, http.NoBody, nil
 	}
 
 	var buf bytes.Buffer
 
-	if _, err = buf.ReadFrom(b); err != nil {
-		return nil, b, fmt.Errorf("buf.ReadFrom:%w", err)
+	if _, err = buf.ReadFrom(body); err != nil {
+		return nil, body, fmt.Errorf("buf.ReadFrom:%w", err)
 	}
 
-	if err = b.Close(); err != nil {
-		return nil, b, fmt.Errorf("b.Close:%w", err)
+	if err = body.Close(); err != nil {
+		return nil, body, fmt.Errorf("body.Close:%w", err)
 	}
 
 	return io.NopCloser(&buf), io.NopCloser(bytes.NewReader(buf.Bytes())), nil

@@ -35,7 +35,7 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 
-	switch e := err.(type) { //nolint:errorlint // false positive
+	switch e := err.(type) { //nolint:errorlint,varnamelen // false positive
 	case *json.SyntaxError:
 		if err := JSONWrite(w, http.StatusBadRequest, e.Error()); err != nil {
 			panic(err)

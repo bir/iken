@@ -139,8 +139,7 @@ func ExtractStackFrameStop(err error, stopFuncName string) []Frame {
 // MarshalStack is a helper to extract the stack trace from an error and make it available as an easily
 // marshalled object (array of file/line/func).
 func MarshalStack(err error) interface{} {
-	out := ExtractStackFrame(err)
-	if len(out) > 0 {
+	if out := ExtractStackFrame(err); len(out) > 0 {
 		return out
 	}
 

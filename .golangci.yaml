@@ -1,4 +1,5 @@
 run:
+  go: 1.18
   deadline: 10m
   skip-dirs:
     - temp
@@ -17,3 +18,18 @@ linters:
 linters-settings:
   cyclop:
     max-complexity: 15
+  varnamelen:
+    max-distance: 10
+    ignore-type-assert-ok: true
+    ignore-map-index-ok: true
+    ignore-decls:
+      - ok bool
+      - i int
+      - e error
+      - h http.Handler
+      - t time.Time
+      - v reflect.Value
+      - w io.Writer
+      - w http.ResponseWriter
+      - rw http.ResponseWriter
+      - r *http.Request
