@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/bir/iken/httputil"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestOp(t *testing.T) {
@@ -28,4 +29,13 @@ func TestOp(t *testing.T) {
 	if op := httputil.GetOp(context.Background()); op != "" {
 		t.Errorf("GetOp() got = `%v`, want `%v`", op, "")
 	}
+}
+
+func TestID(t *testing.T) {
+	ctx := context.Background()
+
+	assert.Zero(t, httputil.GetID(ctx))
+
+	ctx = httputil.SetID(ctx, 111)
+	assert.Equal(t, int64(111), httputil.GetID(ctx))
 }

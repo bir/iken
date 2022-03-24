@@ -74,7 +74,7 @@ func TestSetup(t *testing.T) {
 			viper.Reset()
 			os.Clearenv()
 			for k, v := range tt.env {
-				os.Setenv(k, v)
+				t.Setenv(k, v)
 			}
 
 			if err := config.Load(tt.cfg); (err != nil) != tt.wantErr {
@@ -94,7 +94,7 @@ func TestSetup(t *testing.T) {
 }
 
 type ComplexConfig struct {
-	TestMap    map[string]string `env:"TEST_MAP"`
+	TestMap map[string]string `env:"TEST_MAP"`
 }
 
 func TestComplex(t *testing.T) {
@@ -126,7 +126,7 @@ func TestComplex(t *testing.T) {
 			viper.Reset()
 			os.Clearenv()
 			for k, v := range tt.env {
-				os.Setenv(k, v)
+				t.Setenv(k, v)
 			}
 
 			if err := config.Load(tt.cfg); (err != nil) != tt.wantErr {
@@ -161,8 +161,8 @@ func ExampleLoad() {
 }
 
 func TestFoo(t *testing.T) {
-	os.Setenv("TEST_ARRAY", "1 2 3")
-	os.Setenv("TEST_ARRAY2", "1 2 3")
+	t.Setenv("TEST_ARRAY", "1 2 3")
+	t.Setenv("TEST_ARRAY2", "1 2 3")
 
 	cfg := ExampleConfig{}
 

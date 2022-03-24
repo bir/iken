@@ -1,28 +1,28 @@
 package cache
 
-// NoOpCache is a facade cache, it never returns a hit.
+// NoOp is a facade cache, it never returns a hit.
 // Useful for easily disabling cache at runtime.
-type NoOpCache[K comparable, V any] struct{}
+type NoOp[K comparable, V any] struct{}
 
-// NewNoOpCache creates a new NOP cache.
-func NewNoOpCache[K comparable, V any]() *NoOpCache[K, V] {
-	return &NoOpCache[K, V]{}
+// NewNoOp creates a new NOP cache.
+func NewNoOp[K comparable, V any]() *NoOp[K, V] {
+	return &NoOp[K, V]{}
 }
 
 // Set no-op.
-func (c *NoOpCache[K, V]) Set(_ K, _ V) {
+func (c *NoOp[K, V]) Set(_ K, _ V) {
 }
 
 // Get always returns !ok.
-func (c *NoOpCache[K, V]) Get(_ K) (out V, ok bool) { //nolint: ireturn
+func (c *NoOp[K, V]) Get(_ K) (out V, ok bool) { //nolint: ireturn
 	return
 }
 
 // Keys always returns nil array.
-func (c *NoOpCache[K, _]) Keys() []K {
+func (c *NoOp[K, _]) Keys() []K {
 	return nil
 }
 
 // Delete no-op.
-func (c *NoOpCache[K, V]) Delete(_ K) {
+func (c *NoOp[K, V]) Delete(_ K) {
 }

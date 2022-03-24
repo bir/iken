@@ -24,7 +24,7 @@ func (ee Errors) Error() string {
 		return ""
 	}
 
-	return strutil.Joiner(ee.Keys(), "", "; ", ".", func(key string) string {
+	return strutil.Join(ee.Keys(), "", "; ", ".", func(key string) string {
 		return fmt.Sprintf("%v: %v", key, ee[key].Error())
 	})
 }

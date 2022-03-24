@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func ExampleCache() {
+func ExampleBasic() {
 	c := cache.NewBasic[string, int]()
 	c.Set("a", 1)
 	out, ok := c.Get("a")
@@ -21,6 +21,7 @@ func ExampleCache() {
 	fmt.Println(out, ok)
 	c.Set("b", 2)
 	kk := c.Keys()
+	sort.Strings(kk)
 	fmt.Println(kk)
 	c.Delete("a")
 	kk = c.Keys()

@@ -4,7 +4,7 @@ import "sync"
 
 // Basic is a simple cache and has only supports manual eviction.
 type Basic[K comparable, V any] struct {
-	items map[K]V //nolint: structcheck
+	items map[K]V
 	*sync.RWMutex
 }
 
@@ -27,7 +27,7 @@ func (c *Basic[K, V]) Set(k K, v V) {
 
 // Get gets an item from the cache.
 // Returns the item or zero value, and a bool indicating whether the key was found.
-func (c *Basic[K, V]) Get(k K) (V, bool) { //nolint: ireturn
+func (c *Basic[K, V]) Get(k K) (V, bool) { //nolint:ireturn // false positive
 	c.RLock()
 	defer c.RUnlock()
 
@@ -36,7 +36,7 @@ func (c *Basic[K, V]) Get(k K) (V, bool) { //nolint: ireturn
 	return got, found
 }
 
-// Keys returns cache keys. the order is sorted by created.
+// Keys returns existing keys, the order is indeterminate.
 func (c *Basic[K, _]) Keys() []K {
 	c.RLock()
 	defer c.RUnlock()

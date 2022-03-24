@@ -8,10 +8,10 @@ import (
 )
 
 // Type assertion
-var _ cache.Cache[string, string] = &cache.NoOpCache[string, string]{}
+var _ cache.Cache[string, string] = &cache.NoOp[string, string]{}
 
 func TestNoOpCache(t *testing.T) {
-	c := cache.NewNoOpCache[string, int]()
+	c := cache.NewNoOp[string, int]()
 	// Empty
 	v, ok := c.Get("a")
 	assert.Equal(t, 0, v)

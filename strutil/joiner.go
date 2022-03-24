@@ -2,17 +2,17 @@ package strutil
 
 import "strings"
 
-func Joiner(keys []string, prefix, infix, postfix string, transform func(string) string) string {
+func Join[V any](ss []V, prefix, infix, postfix string, mapper func(V) string) string {
 	var builder strings.Builder
 
 	builder.WriteString(prefix)
 
-	for i, key := range keys {
+	for i, key := range ss {
 		if i > 0 {
 			builder.WriteString(infix)
 		}
 
-		builder.WriteString(transform(key))
+		builder.WriteString(mapper(key))
 	}
 
 	builder.WriteString(postfix)

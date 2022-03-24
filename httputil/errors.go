@@ -50,23 +50,19 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	case AuthError:
 		if errors.Is(e, ErrForbidden) {
-			if err := JSONWrite(w, http.StatusForbidden, e); err != nil {
-				panic(err)
-			}
+			http.Error(w, e.Error(), http.StatusForbidden)
 
 			return
 		}
+
+		msg := e.Error()
 
 		if errors.Is(e, ErrBasicAuthenticate) {
 			w.Header().Set("WWW-Authenticate", "Basic realm=Restricted")
-			w.WriteHeader(http.StatusUnauthorized)
-
-			return
+			msg = "Unauthorized"
 		}
 
-		if err := JSONWrite(w, http.StatusUnauthorized, e); err != nil {
-			panic(err)
-		}
+		http.Error(w, msg, http.StatusUnauthorized)
 
 		return
 	}
