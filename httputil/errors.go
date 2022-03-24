@@ -59,6 +59,7 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 
 		if errors.Is(e, ErrBasicAuthenticate) {
 			w.Header().Set("WWW-Authenticate", "Basic realm=Restricted")
+
 			msg = "Unauthorized"
 		}
 
