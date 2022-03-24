@@ -29,6 +29,20 @@ func (c *Exists[K]) Mark(k K) {
 	c.items[k] = struct{}{}
 }
 
+// MarkIf flags the key and returns if it was previously set.
+func (c *Exists[K]) MarkIf(k K) bool {
+	c.Lock()
+	defer c.Unlock()
+
+	if _, found := c.items[k]; found {
+		return true
+	}
+
+	c.items[k] = struct{}{}
+
+	return false
+}
+
 // Check returns true if the key is marked.
 func (c *Exists[K]) Check(k K) bool {
 	c.RLock()

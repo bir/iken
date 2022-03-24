@@ -74,4 +74,7 @@ func TestExists(t *testing.T) {
 	assert.True(t, c.Check(99), "valid check")
 	assert.False(t, c.Check(1), "empty check")
 	assert.Equal(t, []int{99}, kk, "matching keys")
+
+	assert.False(t, c.MarkIf(101), "mark if not exists")
+	assert.True(t, c.MarkIf(101), "fail mark if exists")
 }
