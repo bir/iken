@@ -126,7 +126,7 @@ var reqWriteExcludeHeaderDump = map[string]bool{
 	"Trailer":           true,
 }
 
-func drainBody(body io.ReadCloser) (r1, r2 io.ReadCloser, err error) {
+func drainBody(body io.ReadCloser) (io.ReadCloser, io.ReadCloser, error) {
 	if body == nil || body == http.NoBody {
 		// No copying needed. Preserve the magic sentinel meaning of NoBody.
 		return http.NoBody, http.NoBody, nil
@@ -134,11 +134,11 @@ func drainBody(body io.ReadCloser) (r1, r2 io.ReadCloser, err error) {
 
 	var buf bytes.Buffer
 
-	if _, err = buf.ReadFrom(body); err != nil {
+	if _, err := buf.ReadFrom(body); err != nil {
 		return nil, body, fmt.Errorf("buf.ReadFrom:%w", err)
 	}
 
-	if err = body.Close(); err != nil {
+	if err := body.Close(); err != nil {
 		return nil, body, fmt.Errorf("body.Close:%w", err)
 	}
 

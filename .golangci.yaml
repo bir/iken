@@ -15,6 +15,7 @@ linters:
     - golint
     - maligned
     - scopelint
+    - exhaustivestruct
 linters-settings:
   cyclop:
     max-complexity: 15

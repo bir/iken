@@ -7,3 +7,9 @@ test:
 cover:
 	go test	-coverprofile cp.out ./...
 	go tool cover -html=cp.out
+
+tidy:
+	go mod tidy -compat=1.18
+
+update:
+	go get -u all
