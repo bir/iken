@@ -38,6 +38,7 @@ func GetPgDBString(base string) string {
 	pairs = appendIf(pairs, "dbname", viper.GetString(base+"_NAME"))
 	pairs = appendIf(pairs, "sslmode", viper.GetString(base+"_SSLMODE"))
 	pairs = appendIf(pairs, "pool_max_conns", viper.GetString(base+"_MAX_CONN"))
+	pairs = appendIf(pairs, "search_path", viper.GetString(base+"_SEARCH_PATH"))
 
 	if len(pairs) == 0 {
 		return ""
