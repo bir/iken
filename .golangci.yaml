@@ -34,3 +34,5 @@ linters-settings:
       - w http.ResponseWriter
       - rw http.ResponseWriter
       - r *http.Request
+      - wg sync.WaitGroup
+      - c chan
