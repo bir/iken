@@ -66,12 +66,34 @@ func StringToURLHookFunc(f reflect.Type, t reflect.Type, data interface{}) (inte
 	return u, nil
 }
 
+// ErrInvalidTime is returned when a time tag fails to parse.
+var ErrInvalidTime = errors.New("failed parsing time")
+
+// StringToTimeFunc converts strings to time.Time.
+func StringToTimeFunc(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+	if f.Kind() != reflect.String {
+		return data, nil
+	}
+
+	if t != reflect.TypeOf(time.Time{}) { //nolint:exhaustruct
+		return data, nil
+	}
+
+	out, err := time.Parse(time.RFC3339, data.(string))
+	if err != nil {
+		return nil, fmt.Errorf("%w: `%v`", ErrInvalidTime, data)
+	}
+
+	return out, nil
+}
+
 func defaultDecoderConfig(c *mapstructure.DecoderConfig) {
 	c.TagName = TagName
 	c.DecodeHook = mapstructure.ComposeDecodeHookFunc(
 		StringToLocationHookFunc,
 		StringToMapStringStringHookFunc,
 		StringToURLHookFunc,
+		StringToTimeFunc,
 		mapstructure.StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","))
 }

@@ -95,6 +95,7 @@ func TestSetup(t *testing.T) {
 
 type ComplexConfig struct {
 	TestMap map[string]string `env:"TEST_MAP"`
+	Time    time.Time         `env:"TIME"`
 }
 
 func TestComplex(t *testing.T) {
@@ -109,9 +110,9 @@ func TestComplex(t *testing.T) {
 		json    string
 		wantErr bool
 	}{
-		{"defaults", nil, &ComplexConfig{}, nil, `{"TestMap":{"one":"1","two":"2"}}`, false},
-		{"EmptyEnv", func() { config.File = ".envEMPTY" }, &ComplexConfig{}, nil, `{"TestMap":null}`, false},
-		{"BadMap", nil, &ComplexConfig{}, map[string]string{"TEST_MAP": "FOO"}, `{"TestMap":{}}`, false},
+		{"defaults", nil, &ComplexConfig{}, nil, `{"TestMap":{"one":"1","two":"2"},"Time":"2021-01-01T00:00:00Z"}`, false},
+		{"EmptyEnv", func() { config.File = ".envEMPTY" }, &ComplexConfig{}, nil, `{"TestMap":null,"Time":"0001-01-01T00:00:00Z"}`, false},
+		{"BadMap", nil, &ComplexConfig{}, map[string]string{"TEST_MAP": "FOO"}, `{"TestMap":{},"Time":"2021-01-01T00:00:00Z"}`, false},
 	}
 
 	for _, tt := range tests {
