@@ -75,7 +75,7 @@ func StringToTimeFunc(f reflect.Type, t reflect.Type, data interface{}) (interfa
 		return data, nil
 	}
 
-	if t != reflect.TypeOf(time.Time{}) { //nolint:exhaustruct
+	if t != reflect.TypeOf(time.Time{}) {
 		return data, nil
 	}
 
