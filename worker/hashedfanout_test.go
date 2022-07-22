@@ -46,8 +46,6 @@ func TestNewHashedFanOut(t *testing.T) {
 			testInts(1024),
 			524800,
 		},
-
-		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {
