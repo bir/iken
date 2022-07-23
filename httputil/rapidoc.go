@@ -62,7 +62,6 @@ func RapiDoc(opts RapiDocOpts) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == pth {
 				rw.Header().Set("Content-Type", "text/html; charset=utf-8")
-				rw.WriteHeader(http.StatusOK)
 
 				_, _ = rw.Write(b)
 

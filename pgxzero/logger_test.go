@@ -51,4 +51,18 @@ func TestLogger_Log(t *testing.T) {
 			}
 		})
 	}
+
+	logBuf.Reset()
+
+	pgxLogger.WithMapper(func(level pgx.LogLevel, s string) zerolog.Level {
+		return zerolog.FatalLevel
+	})
+
+	pgxLogger.Log(context.Background(), pgx.LogLevelDebug, "test fatal mapping", nil)
+	got := logBuf.String()
+	want := `{"level":"fatal","module":"pgx","message":"test fatal mapping"}
+`
+	if got != want {
+		t.Errorf("got `%v`, want `%v`", got, want)
+	}
 }
