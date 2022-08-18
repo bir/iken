@@ -27,7 +27,7 @@ func (rw *ResponseWrapper) Write(buf []byte) (int, error) {
 	n, err := rw.ResponseWriter.Write(buf)
 	rw.bytes += n
 
-	return n, err // nolint
+	return n, err //nolint
 }
 
 func (rw *ResponseWrapper) Status() int {

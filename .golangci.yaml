@@ -16,6 +16,8 @@ linters:
     - maligned
     - scopelint
     - exhaustivestruct
+    - ireturn
+    - ifshort
 linters-settings:
   cyclop:
     max-complexity: 15

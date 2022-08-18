@@ -42,13 +42,16 @@ const (
 
 // parseTag is responsible for parsing struct tags to env config.
 // The struct tag format is:
-//     `env:"ENV_VAR, DEFAULT(opt), RESOLVER(opt)"`
+//
+//	`env:"ENV_VAR, DEFAULT(opt), RESOLVER(opt)"`
+//
 // Example Config struct:
-//    type ExampleConfig struct {
-//	    DebugMode bool   `env:"DEBUG, false"`
-//	    Port      int    `env:"PORT, 3000"`
-//	    DB        string `env:"DB,localhost,pg"`
-//    }
+//
+//	   type ExampleConfig struct {
+//		    DebugMode bool   `env:"DEBUG, false"`
+//		    Port      int    `env:"PORT, 3000"`
+//		    DB        string `env:"DB,localhost,pg"`
+//	   }
 func parseTag(tag string) error {
 	args := strings.Split(tag, ",")
 

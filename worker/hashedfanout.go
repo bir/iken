@@ -74,7 +74,7 @@ func StringHasher[I any](keyFunc KeyFunc[I, string]) HashFunc[I] {
 		defer m.Unlock()
 
 		hash.Reset()
-		hash.WriteString(k) // nolint: errcheck
+		_, _ = hash.WriteString(k)
 
 		return uint(hash.Sum64())
 	}

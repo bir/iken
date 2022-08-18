@@ -22,17 +22,20 @@ func EndOfYear(t time.Time) time.Time {
 // ToTime parses an offset duration string.
 // The calculation is based on an optional anchor (default is NOW) plus a duration.
 // Valid Anchors:
-//   EOD will calculate the end of day
-//   EOY will calculate end of year
+//
+//	EOD will calculate the end of day
+//	EOY will calculate end of year
+//
 // A duration string is a number and unit suffix, such as "300m", "1.5h" or "2h45m".
 // Valid time units are "m", "h".
 // If location is provided, calculations are set to the corresponding time zone.
 // Examples:
-//   "EOD+72h" = end of day in 3 days
-//   "3h" = 3 hours
-//   "EOY" = end of year
-//   "30m" = 30 minutes
-//   "" = now
+//
+//	"EOD+72h" = end of day in 3 days
+//	"3h" = 3 hours
+//	"EOY" = end of year
+//	"30m" = 30 minutes
+//	"" = now
 func ToTime(duration string, location *time.Location) (time.Time, error) {
 	t := NowFunc()
 	if location != nil {
@@ -59,7 +62,7 @@ func ToTime(duration string, location *time.Location) (time.Time, error) {
 
 	d, err := time.ParseDuration(duration)
 	if err != nil {
-		return time.Time{}, err // nolint
+		return time.Time{}, err //nolint
 	}
 
 	return t.Add(d), nil
