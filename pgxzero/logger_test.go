@@ -30,7 +30,7 @@ func TestLogger_Log(t *testing.T) {
 		{"warn", nil, tracelog.LogLevelWarn, "warn", nil, "{\"level\":\"warn\",\"module\":\"tracelog\",\"message\":\"warn\"}\n"},
 		{"info", nil, tracelog.LogLevelInfo, "info", nil, "{\"level\":\"info\",\"module\":\"tracelog\",\"message\":\"info\"}\n"},
 		{"debug", nil, tracelog.LogLevelDebug, "debug", nil, "{\"level\":\"debug\",\"module\":\"tracelog\",\"message\":\"debug\"}\n"},
-		{"trace", nil, tracelog.LogLevelTrace, "trace", nil, "{\"level\":\"debug\",\"module\":\"tracelog\",\"message\":\"trace\"}\n"},
+		{"trace", nil, tracelog.LogLevelTrace, "trace", nil, "{\"level\":\"trace\",\"module\":\"tracelog\",\"message\":\"trace\"}\n"},
 		{"withID in Data", ctx, tracelog.LogLevelWarn, "ctx", dataWithRequest, "{\"level\":\"warn\",\"module\":\"tracelog\",\"request_id\":123,\"message\":\"ctx\"}\n"},
 		{"withID in Ctx", ctx, tracelog.LogLevelWarn, "ctx", dataWithoutRequest, "{\"level\":\"warn\",\"module\":\"tracelog\",\"other\":123,\"request_id\":121,\"message\":\"ctx\"}\n"},
 		{"withID in Ctx no data", ctx, tracelog.LogLevelWarn, "ctx", nil, "{\"level\":\"warn\",\"module\":\"tracelog\",\"request_id\":121,\"message\":\"ctx\"}\n"},
