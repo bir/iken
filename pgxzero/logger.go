@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/bir/iken/httputil"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rs/zerolog"
 )
 
 // LevelMapper converts pgx Log levels to zerolog levels.  This allows custom overrides for the levels provided by pgx.
-type LevelMapper = func(pgx.LogLevel, string) zerolog.Level
+type LevelMapper = func(tracelog.LogLevel, string) zerolog.Level
 
 // Logger manages mapping pgx error messages to Zerolog.
 type Logger struct {
@@ -17,17 +17,17 @@ type Logger struct {
 	mapper LevelMapper
 }
 
-func defaultMapper(level pgx.LogLevel, _ string) zerolog.Level {
+func defaultMapper(level tracelog.LogLevel, _ string) zerolog.Level {
 	switch level {
-	case pgx.LogLevelNone:
+	case tracelog.LogLevelNone:
 		return zerolog.NoLevel
-	case pgx.LogLevelError:
+	case tracelog.LogLevelError:
 		return zerolog.ErrorLevel
-	case pgx.LogLevelWarn:
+	case tracelog.LogLevelWarn:
 		return zerolog.WarnLevel
-	case pgx.LogLevelInfo:
+	case tracelog.LogLevelInfo:
 		return zerolog.InfoLevel
-	case pgx.LogLevelDebug:
+	case tracelog.LogLevelDebug:
 		return zerolog.DebugLevel
 	}
 
@@ -37,7 +37,7 @@ func defaultMapper(level pgx.LogLevel, _ string) zerolog.Level {
 // New converts pgx logging messages to zerolog.
 func New(logger zerolog.Logger) *Logger {
 	return &Logger{
-		logger: logger.With().Str("module", "pgx").Logger(),
+		logger: logger.With().Str("module", "tracelog").Logger(),
 		mapper: defaultMapper,
 	}
 }
@@ -49,7 +49,7 @@ func (l *Logger) WithMapper(m LevelMapper) *Logger {
 }
 
 // Log is the pgx Logger interface contract.
-func (l *Logger) Log(ctx context.Context, level pgx.LogLevel, msg string, data map[string]interface{}) {
+func (l *Logger) Log(ctx context.Context, level tracelog.LogLevel, msg string, data map[string]any) {
 	if ctx != nil && (data == nil || data["request_id"] == nil) {
 		requestID := httputil.GetID(ctx)
 		if requestID != 0 {

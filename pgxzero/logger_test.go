@@ -7,7 +7,7 @@ import (
 
 	"github.com/bir/iken/httputil"
 	"github.com/bir/iken/pgxzero"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rs/zerolog"
 )
 
@@ -20,20 +20,20 @@ func TestLogger_Log(t *testing.T) {
 	tests := []struct {
 		name  string
 		ctx   context.Context
-		level pgx.LogLevel
+		level tracelog.LogLevel
 		msg   string
 		data  map[string]interface{}
 		want  string
 	}{
-		{"none", nil, pgx.LogLevelNone, "default", nil, "{\"module\":\"pgx\",\"message\":\"default\"}\n"},
-		{"error", nil, pgx.LogLevelError, "error", nil, "{\"level\":\"error\",\"module\":\"pgx\",\"message\":\"error\"}\n"},
-		{"warn", nil, pgx.LogLevelWarn, "warn", nil, "{\"level\":\"warn\",\"module\":\"pgx\",\"message\":\"warn\"}\n"},
-		{"info", nil, pgx.LogLevelInfo, "info", nil, "{\"level\":\"info\",\"module\":\"pgx\",\"message\":\"info\"}\n"},
-		{"debug", nil, pgx.LogLevelDebug, "debug", nil, "{\"level\":\"debug\",\"module\":\"pgx\",\"message\":\"debug\"}\n"},
-		{"trace", nil, pgx.LogLevelTrace, "trace", nil, "{\"level\":\"debug\",\"module\":\"pgx\",\"message\":\"trace\"}\n"},
-		{"withID in Data", ctx, pgx.LogLevelWarn, "ctx", dataWithRequest, "{\"level\":\"warn\",\"module\":\"pgx\",\"request_id\":123,\"message\":\"ctx\"}\n"},
-		{"withID in Ctx", ctx, pgx.LogLevelWarn, "ctx", dataWithoutRequest, "{\"level\":\"warn\",\"module\":\"pgx\",\"other\":123,\"request_id\":121,\"message\":\"ctx\"}\n"},
-		{"withID in Ctx no data", ctx, pgx.LogLevelWarn, "ctx", nil, "{\"level\":\"warn\",\"module\":\"pgx\",\"request_id\":121,\"message\":\"ctx\"}\n"},
+		{"none", nil, tracelog.LogLevelNone, "default", nil, "{\"module\":\"tracelog\",\"message\":\"default\"}\n"},
+		{"error", nil, tracelog.LogLevelError, "error", nil, "{\"level\":\"error\",\"module\":\"tracelog\",\"message\":\"error\"}\n"},
+		{"warn", nil, tracelog.LogLevelWarn, "warn", nil, "{\"level\":\"warn\",\"module\":\"tracelog\",\"message\":\"warn\"}\n"},
+		{"info", nil, tracelog.LogLevelInfo, "info", nil, "{\"level\":\"info\",\"module\":\"tracelog\",\"message\":\"info\"}\n"},
+		{"debug", nil, tracelog.LogLevelDebug, "debug", nil, "{\"level\":\"debug\",\"module\":\"tracelog\",\"message\":\"debug\"}\n"},
+		{"trace", nil, tracelog.LogLevelTrace, "trace", nil, "{\"level\":\"debug\",\"module\":\"tracelog\",\"message\":\"trace\"}\n"},
+		{"withID in Data", ctx, tracelog.LogLevelWarn, "ctx", dataWithRequest, "{\"level\":\"warn\",\"module\":\"tracelog\",\"request_id\":123,\"message\":\"ctx\"}\n"},
+		{"withID in Ctx", ctx, tracelog.LogLevelWarn, "ctx", dataWithoutRequest, "{\"level\":\"warn\",\"module\":\"tracelog\",\"other\":123,\"request_id\":121,\"message\":\"ctx\"}\n"},
+		{"withID in Ctx no data", ctx, tracelog.LogLevelWarn, "ctx", nil, "{\"level\":\"warn\",\"module\":\"tracelog\",\"request_id\":121,\"message\":\"ctx\"}\n"},
 	}
 
 	var logBuf bytes.Buffer
@@ -54,13 +54,13 @@ func TestLogger_Log(t *testing.T) {
 
 	logBuf.Reset()
 
-	pgxLogger.WithMapper(func(level pgx.LogLevel, s string) zerolog.Level {
+	pgxLogger.WithMapper(func(level tracelog.LogLevel, s string) zerolog.Level {
 		return zerolog.FatalLevel
 	})
 
-	pgxLogger.Log(context.Background(), pgx.LogLevelDebug, "test fatal mapping", nil)
+	pgxLogger.Log(context.Background(), tracelog.LogLevelDebug, "test fatal mapping", nil)
 	got := logBuf.String()
-	want := `{"level":"fatal","module":"pgx","message":"test fatal mapping"}
+	want := `{"level":"fatal","module":"tracelog","message":"test fatal mapping"}
 `
 	if got != want {
 		t.Errorf("got `%v`, want `%v`", got, want)
