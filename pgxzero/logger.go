@@ -19,6 +19,8 @@ type Logger struct {
 
 func defaultMapper(level tracelog.LogLevel, _ string) zerolog.Level {
 	switch level {
+	case tracelog.LogLevelTrace:
+		return zerolog.TraceLevel
 	case tracelog.LogLevelNone:
 		return zerolog.NoLevel
 	case tracelog.LogLevelError:
