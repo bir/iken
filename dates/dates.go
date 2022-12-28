@@ -67,3 +67,18 @@ func ToTime(duration string, location *time.Location) (time.Time, error) {
 
 	return t.Add(d), nil
 }
+
+// As returns the T as if it was read in the location originally.  It is similar
+// to time.In except this function treats the input as zone less.  Input of 6pm
+// will become 6pm in the new location.
+func As(t time.Time, location *time.Location) time.Time {
+	if t.Location() == location {
+		return t
+	}
+
+	_, offset := t.Zone()
+	out := t.In(location)
+	_, offsetDest := out.Zone()
+
+	return out.Add(time.Duration(offset-offsetDest) * time.Second)
+}

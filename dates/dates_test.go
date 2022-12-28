@@ -85,3 +85,46 @@ func TestToTime(t *testing.T) {
 		})
 	}
 }
+
+func TestAs(t *testing.T) {
+	la, _ := time.LoadLocation("America/Los_Angeles")
+	ma, _ := time.LoadLocation("Europe/Madrid")
+
+	tests := []struct {
+		name     string
+		now      time.Time
+		location *time.Location
+		want     time.Time
+	}{
+		{
+			name:     "NOP",
+			now:      time.Date(2020, 1, 1, 1, 11, 11, 0, time.UTC),
+			location: time.UTC,
+			want:     time.Date(2020, 1, 1, 1, 11, 11, 0, time.UTC),
+		}, {
+			name:     "UTC to LA",
+			now:      time.Date(2020, 1, 1, 2, 11, 11, 0, time.UTC),
+			location: la,
+			want:     time.Date(2020, 1, 1, 2, 11, 11, 0, la),
+		}, {
+			name:     "LA to MA",
+			now:      time.Date(2020, 1, 1, 3, 11, 11, 0, la),
+			location: ma,
+			want:     time.Date(2020, 1, 1, 3, 11, 11, 0, ma),
+		}, {
+			name:     "UTC to MA",
+			now:      time.Date(2020, 1, 1, 4, 11, 11, 0, time.UTC),
+			location: ma,
+			want:     time.Date(2020, 1, 1, 4, 11, 11, 0, ma),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := dates.As(test.now, test.location)
+			if !got.Equal(test.want) {
+				t.Errorf("As() got = %v, want %v", got, test.want)
+			}
+		})
+	}
+
+}
