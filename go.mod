@@ -1,6 +1,6 @@
 module github.com/bir/iken
 
-go 1.19
+go 1.20
 
 require (
 	github.com/jackc/pgx/v5 v5.3.0

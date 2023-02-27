@@ -1,8 +1,7 @@
 package errs
 
-/*
-Similar to pkg/errors with tweaks for custom stack skip, stack extraction filtering and marshalling.
-*/
+// Similar to pkg/errors with tweaks for custom stack skip, stack extraction filtering and marshalling.
+
 import (
 	"fmt"
 	"runtime"

@@ -9,7 +9,7 @@ cover:
 	go tool cover -html=cp.out
 
 tidy:
-	go mod tidy -compat=1.19
+	go mod tidy -compat=1.20
 
 update:
 	go get -u all
