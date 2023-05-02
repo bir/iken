@@ -13,6 +13,15 @@ func EndOfDay(t time.Time) time.Time {
 	return time.Date(year, month, day, 23, 59, 0, 0, t.Location())
 }
 
+func EndOfMonth(t time.Time) time.Time {
+	year, month, _ := t.Date()
+
+	first := time.Date(year, month, 1, 0, 0, 0, 0, t.Location())
+	last := first.AddDate(0, 1, -1)
+
+	return time.Date(year, month, last.Day(), 23, 59, 0, 0, t.Location())
+}
+
 func EndOfYear(t time.Time) time.Time {
 	year, _, _ := t.Date()
 
@@ -24,6 +33,7 @@ func EndOfYear(t time.Time) time.Time {
 // Valid Anchors:
 //
 //	EOD will calculate the end of day
+//	EOM will calculate the end of month
 //	EOY will calculate end of year
 //
 // A duration string is a number and unit suffix, such as "300m", "1.5h" or "2h45m".
@@ -50,6 +60,9 @@ func ToTime(duration string, location *time.Location) (time.Time, error) {
 	switch anchor {
 	case "EOD":
 		t = EndOfDay(t)
+		duration = duration[3:]
+	case "EOM":
+		t = EndOfMonth(t)
 		duration = duration[3:]
 	case "EOY":
 		t = EndOfYear(t)
