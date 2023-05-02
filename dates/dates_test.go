@@ -68,6 +68,20 @@ func TestToTime(t *testing.T) {
 			location: nil,
 			want:     time.Time{},
 			wantErr:  true,
+		}, {
+			name:     "EOM",
+			now:      time.Date(2023, 2, 23, 11, 11, 11, 0, time.UTC),
+			duration: "EOM",
+			location: nil,
+			want:     time.Date(2023, 2, 28, 23, 59, 0, 0, time.UTC),
+			wantErr:  false,
+		}, {
+			name:     "EOM+24h",
+			now:      time.Date(2023, 5, 2, 11, 11, 11, 0, time.UTC),
+			duration: "EOM+24h",
+			location: nil,
+			want:     time.Date(2023, 6, 1, 23, 59, 0, 0, time.UTC),
+			wantErr:  false,
 		},
 	}
 	for _, test := range tests {
