@@ -8,19 +8,28 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
+type eofReader struct{}
+
+func (n eofReader) Close() error { return nil }
+
+func (n eofReader) Read([]byte) (int, error) { return 0, io.EOF }
+
 type dumpTest struct {
-	Name   string
+	Name string
+	// Either Req or GetReq can be set/nil but not both.
 	Req    *http.Request
 	GetReq func() *http.Request
 
-	Body interface{} // optional []byte or func() io.ReadCloser to populate Req.Body
+	Body any // optional []byte or func() io.ReadCloser to populate Req.Body
 
-	WantHeader map[string]string
 	WantBody   string
+	WantHeader map[string]string
 	MustError  bool // if true, the test is expected to throw an error
 }
 
@@ -38,7 +47,7 @@ func (n errCloser) Read([]byte) (int, error) { return 0, io.EOF }
 
 var dumpTests = []dumpTest{
 	{
-		Name: "Chunked coding",
+		Name: "HTTP/1.1 => chunked coding; body; empty trailer",
 		Req: &http.Request{
 			Method: "GET",
 			URL: &url.URL{
@@ -61,22 +70,20 @@ var dumpTests = []dumpTest{
 		WantBody: chunk("abcdef") + chunk(""),
 	},
 	{
-		Name: "Default Method",
+		Name: "Verify that DumpRequest preserves the HTTP version number, doesn't add a Host",
 		Req: &http.Request{
-			URL: &url.URL{
-				Scheme: "http",
-				Host:   "www.google.com",
-				Path:   "/search",
-			},
+			Method:     "GET",
+			URL:        mustParseURL("/foo"),
 			ProtoMajor: 1,
-			ProtoMinor: 1,
-			Close:      true,
+			ProtoMinor: 0,
+			Header: http.Header{
+				"X-Foo": []string{"X-Bar"},
+			},
 		},
 
 		WantHeader: map[string]string{
-			"GET":        "/search HTTP/1.1",
-			"Host":       "www.google.com",
-			"Connection": "close",
+			"GET":   "/foo HTTP/1.0",
+			"X-Foo": "X-Bar",
 		},
 	},
 	{
@@ -118,23 +125,6 @@ var dumpTests = []dumpTest{
 		MustError: true,
 	},
 	{
-		Name: "Verify that DumpRequest preserves the HTTP version number, doesn't add a Host, and doesn't add a User-Agent.",
-		Req: &http.Request{
-			Method:     "GET",
-			URL:        mustParseURL("/foo"),
-			ProtoMajor: 1,
-			ProtoMinor: 0,
-			Header: http.Header{
-				"X-Foo":   []string{"X-Bar"},
-				"Trailer": []string{"Foo"},
-			},
-		},
-
-		WantHeader: map[string]string{"GET": "/foo HTTP/1.0",
-			"X-Foo": "X-Bar",
-		},
-	},
-	{
 		Name: "Request with Body > 8196 (default buffer size)",
 		Req: &http.Request{
 			Method: "POST",
@@ -153,17 +143,17 @@ var dumpTests = []dumpTest{
 		},
 
 		Body: bytes.Repeat([]byte("a"), 8193),
-
 		WantHeader: map[string]string{
 			"POST":           "/ HTTP/1.1",
 			"Host":           "post.tld",
 			"Content-Length": "8193",
 		},
+
 		WantBody: strings.Repeat("a", 8193),
 	},
 
 	{
-		Name: "UserAgent",
+		Name: "User-Agent dumped",
 		GetReq: func() *http.Request {
 			return mustReadRequest("GET http://foo.com/ HTTP/1.1\r\n" +
 				"User-Agent: blah\r\n\r\n")
@@ -173,8 +163,9 @@ var dumpTests = []dumpTest{
 			"User-Agent": "blah",
 		},
 	},
+
 	{
-		Name: "DumpRequest should return the Content-Length when set",
+		Name: "DumpRequest should return the \"Content-Length\" when set",
 		GetReq: func() *http.Request {
 			return mustReadRequest("POST /v2/api/?login HTTP/1.1\r\n" +
 				"Host: passport.myhost.com\r\n" +
@@ -189,22 +180,35 @@ var dumpTests = []dumpTest{
 		WantBody: "key",
 	},
 	{
-		Name: "DumpRequest should return the Content-Length when set to 0",
+		Name: "Issue #7215. DumpRequest should return the \"Content-Length\" in ReadRequest",
 		GetReq: func() *http.Request {
 			return mustReadRequest("POST /v2/api/?login HTTP/1.1\r\n" +
 				"Host: passport.myhost.com\r\n" +
 				"Content-Length: 0\r\n" +
 				"\r\nkey1=name1&key2=name2")
 		},
-
 		WantHeader: map[string]string{
 			"POST":           "/v2/api/?login HTTP/1.1",
 			"Host":           "passport.myhost.com",
 			"Content-Length": "0",
 		},
 	},
+
 	{
-		Name: "DumpRequest should not return the Content-Length when not set",
+		Name: "Issue #7215. DumpRequest should not return the \"Content-Length\" if unset",
+		GetReq: func() *http.Request {
+			return mustReadRequest("POST /v2/api/?login HTTP/1.1\r\n" +
+				"Host: passport.myhost.com\r\n" +
+				"Trailer: Expires\r\n" +
+				"\r\nkey1=name1&key2=name2")
+		},
+		WantHeader: map[string]string{
+			"POST": "/v2/api/?login HTTP/1.1",
+			"Host": "passport.myhost.com",
+		},
+	},
+	{
+		Name: "Issue #7215. DumpRequest should not return the \"Content-Length\" if unset",
 		GetReq: func() *http.Request {
 			return mustReadRequest("POST /v2/api/?login HTTP/1.1\r\n" +
 				"Host: passport.myhost.com\r\n" +
@@ -218,56 +222,98 @@ var dumpTests = []dumpTest{
 }
 
 func TestDumpRequest(t *testing.T) {
-	for i, tt := range dumpTests {
-		t.Run(tt.Name, func(t *testing.T) {
-			if tt.Req != nil && tt.GetReq != nil || tt.Req == nil && tt.GetReq == nil {
-				t.Errorf("#%d: either .Req(%p) or .GetReq(%p) can be set/nil but not both", i, tt.Req, tt.GetReq)
-				return
+	numGoroutine := runtime.NumGoroutine()
+	for _, tt := range dumpTests {
+		if tt.Req != nil && tt.GetReq != nil || tt.Req == nil && tt.GetReq == nil {
+			t.Errorf("%q: either .Req(%p) or .GetReq(%p) can be set/nil but not both", tt.Name, tt.Req, tt.GetReq)
+			continue
+		}
+
+		freshReq := func(ti dumpTest) *http.Request {
+			req := ti.Req
+			if req == nil {
+				req = ti.GetReq()
 			}
 
-			freshReq := func(ti dumpTest) *http.Request {
-				req := ti.Req
-				if req == nil {
-					req = ti.GetReq()
-				}
+			if req.Header == nil {
+				req.Header = make(http.Header)
+			}
 
-				if req.Header == nil {
-					req.Header = make(http.Header)
-				}
-
-				if ti.Body == nil {
-					return req
-				}
-				switch b := ti.Body.(type) {
-				case []byte:
-					req.Body = io.NopCloser(bytes.NewReader(b))
-				case func() io.ReadCloser:
-					req.Body = b()
-				default:
-					t.Fatalf("Test %d: unsupported Body of %T", i, ti.Body)
-				}
+			if ti.Body == nil {
 				return req
 			}
+			switch b := ti.Body.(type) {
+			case []byte:
+				req.Body = io.NopCloser(bytes.NewReader(b))
+			case func() io.ReadCloser:
+				req.Body = b()
+			default:
+				t.Fatalf("Test %q: unsupported Body of %T", tt.Name, ti.Body)
+			}
+			return req
+		}
 
+		req := freshReq(tt)
+		got := DumpHeader(req)
+		if !reflect.DeepEqual(got, tt.WantHeader) {
+			t.Errorf("DumpHeader %q, expecting:\n%s\nGot:\n%s\n", tt.Name, tt.WantHeader, got)
+			continue
+		}
+
+		req = freshReq(tt)
+		dump, err := DumpBody(req)
+		if err != nil && !tt.MustError {
+			t.Errorf("DumpBody %q: %s\nWantDump:\n%s", tt.Name, err, tt.WantBody)
+			continue
+		}
+		if string(dump) != tt.WantBody {
+			t.Errorf("DumpBody %q, expecting:\n%s\nGot:\n%s\n", tt.Name, tt.WantBody, string(dump))
+			continue
+		}
+
+		if tt.MustError {
 			req := freshReq(tt)
-			dump := DumpHeader(req)
-			if !reflect.DeepEqual(dump, tt.WantHeader) {
-				t.Errorf("DumpRequest %d, expecting:\n%s\nGot:\n%s\n", i, tt.WantHeader, dump)
-				return
+			_, err := DumpBody(req)
+			if err == nil {
+				t.Errorf("DumpBody %q: expected an error, got nil", tt.Name)
 			}
+			continue
+		}
 
-			b, err := DumpBody(req)
-			if tt.MustError && err == nil {
-				t.Errorf("DumpRequest #%d: expected error", i)
-				return
-			}
-
-			if tt.WantBody != string(b) {
-				t.Errorf("DumpRequest %d, expecting body:\n`%s`\nGot:\n`%s`\n", i, tt.WantBody, b)
-				return
-			}
-		})
 	}
+
+	// Validate we haven't leaked any goroutines.
+	var dg int
+	dl := deadline(t, 5*time.Second, time.Second)
+	for time.Now().Before(dl) {
+		if dg = runtime.NumGoroutine() - numGoroutine; dg <= 4 {
+			// No unexpected goroutines.
+			return
+		}
+
+		// Allow goroutines to schedule and die off.
+		runtime.Gosched()
+	}
+
+	buf := make([]byte, 4096)
+	buf = buf[:runtime.Stack(buf, true)]
+	t.Errorf("Unexpectedly large number of new goroutines: %d new: %s", dg, buf)
+}
+
+// deadline returns the time which is needed before t.Deadline()
+// if one is configured, and it is s greater than needed in the future,
+// otherwise defaultDelay from the current time.
+func deadline(t *testing.T, defaultDelay, needed time.Duration) time.Time {
+	if dl, ok := t.Deadline(); ok {
+		if dl = dl.Add(-needed); dl.After(time.Now()) {
+			// Allow an arbitrarily long delay.
+			return dl
+		}
+	}
+
+	// No deadline configured or its closer than needed from now
+	// so just use the default.
+	return time.Now().Add(defaultDelay)
 }
 
 func chunk(s string) string {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/bir/iken/errs"
 	"github.com/bir/iken/httputil"
+	"github.com/bir/iken/logctx"
 	"github.com/bir/iken/validation"
 )
 
@@ -32,7 +33,7 @@ func TestErrorHandler(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			c := httputil.SetID(test.ctx, 0)
+			c := logctx.SetID(test.ctx, 0)
 			r := &http.Request{}
 			r = r.WithContext(c)
 			w := httptest.NewRecorder()

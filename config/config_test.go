@@ -10,8 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bir/iken/config"
 	"github.com/spf13/viper"
+
+	"github.com/bir/iken/config"
 )
 
 type Config struct {

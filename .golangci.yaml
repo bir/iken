@@ -18,9 +18,19 @@ linters:
     - exhaustivestruct
     - ireturn
     - ifshort
+    - deadcode
+    - structcheck
+    - varcheck
+    - nosnakecase
+    - exhaustruct
 linters-settings:
   cyclop:
     max-complexity: 15
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/bir/iken)
   varnamelen:
     max-distance: 10
     ignore-type-assert-ok: true
@@ -28,6 +38,7 @@ linters-settings:
     ignore-decls:
       - ok bool
       - i int
+      - n int
       - e error
       - h http.Handler
       - t time.Time
@@ -38,3 +49,6 @@ linters-settings:
       - r *http.Request
       - wg sync.WaitGroup
       - c chan
+      - op string
+      - l zerolog.Logger
+      - r io.Reader

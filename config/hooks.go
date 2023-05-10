@@ -32,7 +32,7 @@ func StringToLocationHookFunc(f reflect.Type, t reflect.Type, data interface{}) 
 	return l, nil
 }
 
-// StringToMapStringStringHookFunc converts strings to *time.Location.
+// StringToMapStringStringHookFunc converts strings to map[string]string.
 func StringToMapStringStringHookFunc(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
 	if f.Kind() != reflect.String {
 		return data, nil
@@ -48,7 +48,7 @@ func StringToMapStringStringHookFunc(f reflect.Type, t reflect.Type, data interf
 // ErrInvalidURL is returned when a URL tag fails to parse.
 var ErrInvalidURL = errors.New("failed parsing url")
 
-// StringToURLHookFunc converts strings to *time.Location.
+// StringToURLHookFunc converts strings to *url.URL.
 func StringToURLHookFunc(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
 	if f.Kind() != reflect.String {
 		return data, nil

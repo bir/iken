@@ -5,10 +5,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bir/iken/httputil"
-	"github.com/bir/iken/pgxzero"
 	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rs/zerolog"
+
+	"github.com/bir/iken/logctx"
+	"github.com/bir/iken/pgxzero"
 )
 
 func TestLogger_Log(t *testing.T) {
@@ -16,7 +17,7 @@ func TestLogger_Log(t *testing.T) {
 	dataWithRequest := map[string]interface{}{"request_id": 123}
 	dataWithoutRequest := map[string]interface{}{"other": 123}
 
-	ctx := httputil.SetID(context.Background(), 121)
+	ctx := logctx.SetID(context.Background(), 121)
 	tests := []struct {
 		name  string
 		ctx   context.Context
@@ -25,6 +26,7 @@ func TestLogger_Log(t *testing.T) {
 		data  map[string]interface{}
 		want  string
 	}{
+		{"no level", nil, 0, "no level", nil, "{\"level\":\"debug\",\"module\":\"tracelog\",\"message\":\"no level\"}\n"},
 		{"none", nil, tracelog.LogLevelNone, "default", nil, "{\"module\":\"tracelog\",\"message\":\"default\"}\n"},
 		{"error", nil, tracelog.LogLevelError, "error", nil, "{\"level\":\"error\",\"module\":\"tracelog\",\"message\":\"error\"}\n"},
 		{"warn", nil, tracelog.LogLevelWarn, "warn", nil, "{\"level\":\"warn\",\"module\":\"tracelog\",\"message\":\"warn\"}\n"},

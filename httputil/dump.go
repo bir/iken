@@ -10,7 +10,9 @@ import (
 )
 
 // Ported from go stdlib httputil.dump.  Tweaked to split the header and body into separate functions for more
-// flexible logging. Header is returned as a map[string]string for ease of handling.  Strictly a logging utility.
+// flexible logging. Header is returned as a map[string]string for ease of handling.  Strictly a logging utility for
+// inbound requests.
+// https://cs.opensource.google/go/go/+/refs/tags/go1.20.2:src/net/http/httputil/dump.go
 
 func DumpHeader(req *http.Request) map[string]string {
 	out := map[string]string{}
@@ -36,10 +38,6 @@ func DumpHeader(req *http.Request) map[string]string {
 
 	if len(req.TransferEncoding) > 0 {
 		out["Transfer-Encoding"] = strings.Join(req.TransferEncoding, ",")
-	}
-
-	if req.Close {
-		out["Connection"] = "close"
 	}
 
 	for name, values := range req.Header {
@@ -74,7 +72,7 @@ func DumpBody(req *http.Request) ([]byte, error) {
 
 	err = dumpBody(req, &b, chunked)
 	if err != nil {
-		return nil, err
+		return nil, err // Ignore for coverage - requires drainBody to succeed and dumpBody fail
 	}
 
 	req.Body = save
@@ -91,7 +89,7 @@ func dumpBody(req *http.Request, body io.Writer, chunked bool) error {
 
 	_, err := io.Copy(w, req.Body)
 	if err != nil {
-		return fmt.Errorf("copy:%w", err)
+		return fmt.Errorf("copy:%w", err) // Ignore for coverage
 	}
 
 	if chunked {
@@ -100,12 +98,12 @@ func dumpBody(req *http.Request, body io.Writer, chunked bool) error {
 		}
 
 		if err != nil {
-			return fmt.Errorf("close:%w", err)
+			return fmt.Errorf("close:%w", err) // Ignore for coverage
 		}
 
 		_, err = io.WriteString(body, "\r\n")
 		if err != nil {
-			return fmt.Errorf("io.WriteString:%w", err)
+			return fmt.Errorf("io.WriteString:%w", err) // Ignore for coverage
 		}
 	}
 

@@ -1,11 +1,12 @@
-package httputil_test
+package logctx_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/bir/iken/httputil"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/bir/iken/logctx"
 )
 
 func TestOp(t *testing.T) {
@@ -16,17 +17,18 @@ func TestOp(t *testing.T) {
 	}{
 		{"empty", context.Background(), ""},
 		{"opName", context.Background(), "opName"},
+		{"override", logctx.SetOp(context.Background(), "foo"), "opName2"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			c := httputil.SetOp(test.ctx, test.op)
-			if op := httputil.GetOp(c); op != test.op {
+			c := logctx.SetOp(test.ctx, test.op)
+			if op := logctx.GetOp(c); op != test.op {
 				t.Errorf("GetOp() got = `%v`, want `%v`", op, test.op)
 			}
 		})
 	}
 
-	if op := httputil.GetOp(context.Background()); op != "" {
+	if op := logctx.GetOp(context.Background()); op != "" {
 		t.Errorf("GetOp() got = `%v`, want `%v`", op, "")
 	}
 }
@@ -34,8 +36,8 @@ func TestOp(t *testing.T) {
 func TestID(t *testing.T) {
 	ctx := context.Background()
 
-	assert.Zero(t, httputil.GetID(ctx))
+	assert.Zero(t, logctx.GetID(ctx))
 
-	ctx = httputil.SetID(ctx, 111)
-	assert.Equal(t, int64(111), httputil.GetID(ctx))
+	ctx = logctx.SetID(ctx, 111)
+	assert.Equal(t, int64(111), logctx.GetID(ctx))
 }

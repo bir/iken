@@ -3,9 +3,10 @@ package pgxzero
 import (
 	"context"
 
-	"github.com/bir/iken/httputil"
 	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rs/zerolog"
+
+	"github.com/bir/iken/logctx"
 )
 
 // LevelMapper converts pgx Log levels to zerolog levels.  This allows custom overrides for the levels provided by pgx.
@@ -53,7 +54,7 @@ func (l *Logger) WithMapper(m LevelMapper) *Logger {
 // Log is the pgx Logger interface contract.
 func (l *Logger) Log(ctx context.Context, level tracelog.LogLevel, msg string, data map[string]any) {
 	if ctx != nil && (data == nil || data["request_id"] == nil) {
-		requestID := httputil.GetID(ctx)
+		requestID := logctx.GetID(ctx)
 		if requestID != 0 {
 			if data == nil {
 				data = make(map[string]interface{})

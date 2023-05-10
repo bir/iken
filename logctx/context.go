@@ -1,4 +1,4 @@
-package httputil
+package logctx
 
 import (
 	"context"
@@ -12,18 +12,38 @@ const (
 )
 
 // SetOp stores a label for the current request.  Useful for developer friendly log messages.
+// This is mutable within the context.
 func SetOp(ctx context.Context, op string) context.Context {
-	return context.WithValue(ctx, opCtx, op)
+	o := getOp(ctx)
+	if o != nil {
+		*o = op
+
+		return ctx
+	}
+
+	v := op
+
+	return context.WithValue(ctx, opCtx, &v)
 }
 
 // GetOp returns the operation label logged to the context, otherwise "".
 func GetOp(ctx context.Context) string {
-	s, ok := ctx.Value(opCtx).(string)
+	s := getOp(ctx)
+	if s != nil {
+		return *s
+	}
+
+	return ""
+}
+
+// getOp returns the operation label logged to the context, otherwise "".
+func getOp(ctx context.Context) *string {
+	s, ok := ctx.Value(opCtx).(*string)
 	if ok {
 		return s
 	}
 
-	return ""
+	return nil
 }
 
 // SetID sets the request ID logged to the context.

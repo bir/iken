@@ -15,6 +15,7 @@ func TestMin(t *testing.T) {
 		{"float32", 1 == comp.Min(1.0, 99.0)},
 		{"string", "1" == comp.Min("1", "99")},
 		{"uint", 1 == comp.Min(uint(1), uint(99))},
+		{"uint reverse", 1 == comp.Min(uint(99), uint(1))},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -34,6 +35,7 @@ func TestMax(t *testing.T) {
 		{"float32", 99 == comp.Max(1.0, 99.0)},
 		{"string", "99" == comp.Max("1", "99")},
 		{"uint", 99 == comp.Max(uint(1), uint(99))},
+		{"uint reverse", 99 == comp.Max(uint(99), uint(1))},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/bir/iken/logctx"
 	"github.com/bir/iken/validation"
 )
 
@@ -35,16 +36,18 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 
+	logctx.AddToContext(r.Context(), "internalError", err)
+
 	switch e := err.(type) { //nolint:errorlint,varnamelen // false positive
 	case *json.SyntaxError:
 		if err := JSONWrite(w, http.StatusBadRequest, e.Error()); err != nil {
-			panic(err)
+			panic(err) // Ignore for coverage
 		}
 
 		return
 	case *validation.Errors:
 		if err := JSONWrite(w, http.StatusBadRequest, e); err != nil {
-			panic(err)
+			panic(err) // Ignore for coverage
 		}
 
 		return
@@ -68,5 +71,5 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 
-	http.Error(w, fmt.Sprintf(InternalErrorFormat, GetID(r.Context())), http.StatusInternalServerError)
+	http.Error(w, fmt.Sprintf(InternalErrorFormat, logctx.GetID(r.Context())), http.StatusInternalServerError)
 }

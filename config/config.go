@@ -62,7 +62,7 @@ func parseTag(tag string) error {
 
 	err := viper.BindEnv(key)
 	if err != nil {
-		return fmt.Errorf("binding tag: `%s`: %w", tag, err)
+		return fmt.Errorf("binding tag: `%s`: %w", tag, err) // Ignore coverage - unlikely to error
 	}
 
 	if len(args) <= 1 {
