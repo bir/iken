@@ -52,3 +52,4 @@ linters-settings:
       - op string
       - l zerolog.Logger
       - r io.Reader
+      - l zerolog.Context
