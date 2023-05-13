@@ -47,15 +47,14 @@ func TestRequestLogger(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			logOutput := bytes.NewBuffer(nil)
-			ctx := logctx.NewSubLoggerContext(zerolog.New(logOutput))
 
-			h := RequestLogger(tt.next, tt.shouldLog)
+			h := RequestLogger(zerolog.New(logOutput), tt.shouldLog)
 
 			w := httptest.NewRecorder()
-			r := httptest.NewRequest("FOO", "/BAR", bytes.NewBufferString(tt.body)).WithContext(ctx)
+			r := httptest.NewRequest("FOO", "/BAR", bytes.NewBufferString(tt.body))
 
 			now = startNow
-			h.ServeHTTP(w, r)
+			h(tt.next).ServeHTTP(w, r)
 
 			got := logOutput.String()
 
