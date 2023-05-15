@@ -2,6 +2,7 @@ package httplog
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -43,6 +44,12 @@ func TestRequestLogger(t *testing.T) {
 `},
 		{"request Body too big", doLogs(true, true, false), "12345678901", http.HandlerFunc(readNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","http.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"network.bytes_read":11,"request":"1234567890","op":"[FOO] /BAR","http.status_code":200,"network.bytes_written":11,"duration":0.1,"message":"[FOO] /BAR"}
 `},
+		{"panic String", doLogs(true, true, true), "123", http.HandlerFunc(readPanic("test")), `{"level":"error","http.method":"FOO","http.url_details.path":"/BAR","http.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"network.bytes_read":3,"request":"123","error":"test: internal error","error.stack":["/Users/mbir/Projects/iken/httplog/request_test.go:99 (iken/httplog.TestRequestLogger.func9)","\t$GO/net/http/server.go:2122 (net/http.HandlerFunc.ServeHTTP)","/Users/mbir/Projects/iken/httplog/request.go:127 (iken/httplog.RequestLogger.func1.1)","\t$GO/net/http/server.go:2122 (net/http.HandlerFunc.ServeHTTP)","/Users/mbir/Projects/iken/httplog/request_test.go:64 (iken/httplog.TestRequestLogger.func1)","\t$GO/testing/testing.go:1576 (testing.tRunner)","\t$GO/testing/testing.go:1629 (created by testing.)"],"message":"Panic"}
+`},
+		{"panic Error", doLogs(true, true, true), "123", http.HandlerFunc(readPanic(errors.New("test"))), `{"level":"error","http.method":"FOO","http.url_details.path":"/BAR","http.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"network.bytes_read":3,"request":"123","error":"test","error.stack":["/Users/mbir/Projects/iken/httplog/request_test.go:99 (iken/httplog.TestRequestLogger.func11)","\t$GO/net/http/server.go:2122 (net/http.HandlerFunc.ServeHTTP)","/Users/mbir/Projects/iken/httplog/request.go:127 (iken/httplog.RequestLogger.func1.1)","\t$GO/net/http/server.go:2122 (net/http.HandlerFunc.ServeHTTP)","/Users/mbir/Projects/iken/httplog/request_test.go:64 (iken/httplog.TestRequestLogger.func1)","\t$GO/testing/testing.go:1576 (testing.tRunner)","\t$GO/testing/testing.go:1629 (created by testing.)"],"message":"Panic"}
+`},
+		{"panic nil", doLogs(true, true, true), "123", http.HandlerFunc(readPanic(1)), `{"level":"error","http.method":"FOO","http.url_details.path":"/BAR","http.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"network.bytes_read":3,"request":"123","error":"internal error","error.stack":["/Users/mbir/Projects/iken/httplog/request_test.go:99 (iken/httplog.TestRequestLogger.func13)","\t$GO/net/http/server.go:2122 (net/http.HandlerFunc.ServeHTTP)","/Users/mbir/Projects/iken/httplog/request.go:127 (iken/httplog.RequestLogger.func1.1)","\t$GO/net/http/server.go:2122 (net/http.HandlerFunc.ServeHTTP)","/Users/mbir/Projects/iken/httplog/request_test.go:64 (iken/httplog.TestRequestLogger.func1)","\t$GO/testing/testing.go:1576 (testing.tRunner)","\t$GO/testing/testing.go:1629 (created by testing.)"],"message":"Panic"}
+`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -83,6 +90,14 @@ func readNext(w http.ResponseWriter, r *http.Request) {
 	buf := bytes.NewBuffer(nil)
 	_, _ = io.Copy(buf, r.Body)
 	_, _ = w.Write(buf.Bytes())
+}
+
+func readPanic(result any) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		now = endNow
+
+		panic(result)
+	}
 }
 
 func statusNext(status int) func(w http.ResponseWriter, r *http.Request) {
