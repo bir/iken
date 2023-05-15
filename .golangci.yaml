@@ -23,9 +23,10 @@ linters:
     - varcheck
     - nosnakecase
     - exhaustruct
+    - gocognit
 linters-settings:
   cyclop:
-    max-complexity: 15
+    max-complexity: 18
   gci:
     sections:
       - standard
@@ -53,3 +54,5 @@ linters-settings:
       - l zerolog.Logger
       - r io.Reader
       - l zerolog.Context
+      - s string
+      - l string

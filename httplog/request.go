@@ -38,6 +38,9 @@ var MaxRequestBodyLog = 24 * 1024
 // now is a utility used for automated testing (overriding the runtime clock).
 var now = time.Now
 
+// stackSkip defines the lines to skip in the stack logger - this is determined by the structure of this code.
+const stackSkip = 3
+
 // FnShouldLog given a request, return flags that control logging.
 // logRequest will disable the entire request logging middleware, default is true.
 // logRequestBody will log the body of the request, default is false.
@@ -51,7 +54,6 @@ var ErrInternal = errors.New("internal error")
 // RequestLogger returns a handler that call initializes Op in the context, and logs each request.
 func RequestLogger(log zerolog.Logger, shouldLog FnShouldLog) func(http.Handler) http.Handler { //nolint: funlen
 	return func(next http.Handler) http.Handler {
-
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := logctx.SetOp(r.Context(), fmt.Sprintf("[%s] %s", r.Method, r.URL))
 
@@ -69,7 +71,7 @@ func RequestLogger(log zerolog.Logger, shouldLog FnShouldLog) func(http.Handler)
 					}
 					s := string(debug.Stack())
 
-					zerolog.Ctx(ctx).Err(err).Strs(Stack, simplifyStack(s, 3)).Msg("Panic")
+					zerolog.Ctx(ctx).Err(err).Strs(Stack, simplifyStack(s, stackSkip)).Msg("Panic")
 
 					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				}

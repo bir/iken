@@ -33,46 +33,46 @@ func cleanPaths(line *string) {
 	}
 }
 
-func simpleLine(line, fn string) string {
-	i := strings.LastIndex(fn, "/")
+func simpleLine(line, funcName string) string {
+	i := strings.LastIndex(funcName, "/")
 	if i > 0 {
-		l2 := fn[:i]
+		l2 := funcName[:i]
 
 		i2 := strings.LastIndex(l2, "/")
 		if i2 > 0 {
-			fn = fn[i2+1:]
+			funcName = funcName[i2+1:]
 		}
 	}
 
-	return line + " (" + fn + ")"
+	return line + " (" + funcName + ")"
 }
 
 func simplifyStack(stack string, skip int) []string {
-	l := strings.Split(stack, "\n")
+	lines := strings.Split(stack, "\n")
 	//	First line is goroutine ID (e.g. "goroutine 83 [running]:") - those are purged
 	// The rest are pairs of lines like:
 	// runtime/debug.Stack(0x0, 0x0, 0x0)
 	// \t/usr/local/Cellar/go/1.11/libexec/src/runtime/debug/stack.go:24 +0xb1
 	// We convert to:
 	// $GO/net/http/server.go:1964 (net/http.HandlerFunc.ServeHTTP)
-	result := make([]string, 0, len(l))
+	result := make([]string, 0, len(lines))
 
-	var fn string
+	var funcName string
 
 	var line string
 
-	for i, s := range l[1+skip*2:] {
+	for i, s := range lines[1+skip*2:] {
 		if len(s) == 0 {
 			continue
 		}
 
 		if i%2 == 0 {
-			fn = s
-			if strings.HasPrefix(fn, RecoverBasePath) {
-				fn = strings.TrimPrefix(s, RecoverBasePath)
+			funcName = s
+			if strings.HasPrefix(funcName, RecoverBasePath) {
+				funcName = strings.TrimPrefix(s, RecoverBasePath)
 			}
 
-			fn = fn[0:strings.LastIndex(fn, "(")]
+			funcName = funcName[0:strings.LastIndex(funcName, "(")]
 
 			continue
 		}
@@ -85,7 +85,7 @@ func simplifyStack(stack string, skip int) []string {
 			line = line[:idx]
 		}
 
-		r := simpleLine(line, fn)
+		r := simpleLine(line, funcName)
 		result = append(result, r)
 	}
 
