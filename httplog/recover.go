@@ -1,10 +1,20 @@
 package httplog
 
 import (
+	"runtime/debug"
 	"strings"
 )
 
-var RecoverBasePath = ""
+var RecoverBasePath = initBasePath()
+
+func initBasePath() string {
+	buildInfo, ok := debug.ReadBuildInfo()
+	if !ok {
+		return ""
+	}
+
+	return buildInfo.Main.Path
+}
 
 func mapLine(line *string, path, prefix string) bool {
 	i := strings.Index(*line, path)
@@ -19,8 +29,8 @@ func mapLine(line *string, path, prefix string) bool {
 }
 
 func cleanPaths(line *string) {
-	paths := []string{RecoverBasePath, "libexec/src/", "github.com/", "gopkg.in/"}
-	prefixes := []string{"./", "\t$GO/", "\tgithub.com/", "\tgopkg.in/"}
+	paths := []string{RecoverBasePath, "libexec/src/", "github.com/", "gopkg.in/", "x64/src"}
+	prefixes := []string{"./", "\t$GO/", "\tgithub.com/", "\tgopkg.in/", "\t$GO/"}
 
 	for n := 0; n < len(paths); n++ {
 		if mapLine(line, paths[n], prefixes[n]) {
