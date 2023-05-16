@@ -61,7 +61,21 @@ func TestRequestLogger(t *testing.T) {
 
 			got := logOutput.String()
 
-			assert.Equal(t, tt.want, got, "logs")
+			if len(got) < 1 {
+				assert.True(t, len(tt.want) < 1, "got empty data, expected logs")
+
+				return
+			}
+
+			result := make(map[string]any)
+			err := json.Unmarshal([]byte(got), &result)
+			assert.Nil(t, err, "json Unmarshal got")
+
+			want := make(map[string]any)
+			err = json.Unmarshal([]byte(tt.want), &want)
+			assert.Nil(t, err, "json Unmarshal want")
+
+			assert.Equal(t, result, want, "logs")
 		})
 	}
 }

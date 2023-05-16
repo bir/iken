@@ -22,11 +22,11 @@ const (
 	HTTPURLDetailsPath  = "http.url_details.path"
 	NetworkBytesWritten = "network.bytes_written"
 	Operation           = "op"
-	Request             = "request"
+	Request             = "request.body"
 	RequestID           = "http.request_id"
-	RequestHeaders      = "http.headers"
+	RequestHeaders      = "request.headers"
 	RequestSize         = "network.bytes_read"
-	Response            = "response"
+	Response            = "response.body"
 	TraceID             = "trace_id"
 	UserID              = "usr.id"
 	Stack               = "error.stack"
@@ -102,7 +102,11 @@ func RequestLogger(log zerolog.Logger, shouldLog FnShouldLog) func(http.Handler)
 				wrappedWriter.Tee(responseBuffer)
 			}
 
-			l := log.With().
+			l := log.Hook(zerolog.HookFunc(func(e *zerolog.Event, _ zerolog.Level, _ string) {
+				op := logctx.GetOp(ctx)
+				e.Str(Operation, op)
+			})).
+				With().
 				Str(HTTPMethod, r.Method).
 				Str(HTTPURLDetailsPath, r.URL.Path).
 				Interface(RequestHeaders, httputil.DumpHeader(r))
@@ -129,11 +133,9 @@ func RequestLogger(log zerolog.Logger, shouldLog FnShouldLog) func(http.Handler)
 				next.ServeHTTP(wrappedWriter, r.WithContext(ctx))
 			}
 
-			op := logctx.GetOp(ctx)
 			status := wrappedWriter.Status()
 
 			l = zerolog.Ctx(ctx).With().
-				Str(Operation, op).
 				Int(HTTPStatusCode, status).
 				Int(NetworkBytesWritten, wrappedWriter.BytesWritten()).
 				Dur(Duration, now().Sub(start))
@@ -154,6 +156,7 @@ func RequestLogger(log zerolog.Logger, shouldLog FnShouldLog) func(http.Handler)
 				event = logger.Info()
 			}
 
+			op := logctx.GetOp(ctx)
 			if op != "" {
 				event.Msg(op)
 			} else {
