@@ -2,10 +2,7 @@ package httplog
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	"net/http"
-	"runtime/debug"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -22,11 +19,11 @@ const (
 	HTTPURLDetailsPath  = "http.url_details.path"
 	NetworkBytesWritten = "network.bytes_written"
 	Operation           = "op"
-	Request             = "request"
+	Request             = "request.body"
 	RequestID           = "http.request_id"
-	RequestHeaders      = "http.headers"
+	RequestHeaders      = "request.headers"
 	RequestSize         = "network.bytes_read"
-	Response            = "response"
+	Response            = "response.body"
 	TraceID             = "trace_id"
 	UserID              = "usr.id"
 	Stack               = "error.stack"
@@ -48,35 +45,14 @@ const stackSkip = 3
 // results.
 type FnShouldLog func(r *http.Request) (logRequest, logRequestBody, logResponseBody bool)
 
-// ErrInternal is the default error returned from a panic.
-var ErrInternal = errors.New("internal error")
+func LogRequestBody(_ *http.Request) (bool, bool, bool) { return true, true, false }
+
+func LogAll(_ *http.Request) (bool, bool, bool) { return true, true, true }
 
 // RequestLogger returns a handler that call initializes Op in the context, and logs each request.
-func RequestLogger(log zerolog.Logger, shouldLog FnShouldLog) func(http.Handler) http.Handler { //nolint: funlen
+func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //nolint: funlen
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := logctx.SetOp(r.Context(), fmt.Sprintf("[%s] %s", r.Method, r.URL))
-
-			defer func() {
-				rErr := recover()
-				if rErr != nil {
-					var err error
-					switch t := rErr.(type) {
-					case string:
-						err = fmt.Errorf("%v: %w", t, ErrInternal)
-					case error:
-						err = t
-					default:
-						err = ErrInternal
-					}
-					s := string(debug.Stack())
-
-					zerolog.Ctx(ctx).Err(err).Strs(Stack, simplifyStack(s, stackSkip)).Msg("Panic")
-
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				}
-			}()
-
 			start := now()
 
 			var logRequest, logRequestBody, logResponse bool
@@ -86,9 +62,12 @@ func RequestLogger(log zerolog.Logger, shouldLog FnShouldLog) func(http.Handler)
 				logRequest, logRequestBody, logResponse = shouldLog(r)
 			}
 
+			requestID := r.Header.Get(httputil.RequestIDHeader)
+			ctx := logctx.SetID(r.Context(), requestID)
+
 			if !logRequest {
 				if next != nil {
-					next.ServeHTTP(w, r)
+					next.ServeHTTP(w, r.WithContext(ctx))
 				}
 
 				return
@@ -102,38 +81,40 @@ func RequestLogger(log zerolog.Logger, shouldLog FnShouldLog) func(http.Handler)
 				wrappedWriter.Tee(responseBuffer)
 			}
 
-			l := log.With().
-				Str(HTTPMethod, r.Method).
-				Str(HTTPURLDetailsPath, r.URL.Path).
-				Interface(RequestHeaders, httputil.DumpHeader(r))
+			zerolog.Ctx(ctx).UpdateContext(func(logContext zerolog.Context) zerolog.Context {
+				if logRequestBody {
+					body, err := httputil.DumpBody(r)
+					if err != nil {
+						panic(err) // Ignore coverage
+					}
 
-			if logRequestBody {
-				body, err := httputil.DumpBody(r)
-				if err != nil {
-					panic(err) // Ignore coverage
+					size := len(body)
+					logContext = logContext.Int(RequestSize, size)
+
+					if size > MaxRequestBodyLog {
+						logContext = logContext.Bytes(Request, body[:MaxRequestBodyLog])
+					} else {
+						logContext = logContext.Bytes(Request, body)
+					}
 				}
 
-				size := len(body)
-				l = l.Int(RequestSize, size)
-
-				if size > MaxRequestBodyLog {
-					l = l.Bytes(Request, body[:MaxRequestBodyLog])
-				} else {
-					l = l.Bytes(Request, body)
+				if requestID != "" {
+					logContext = logContext.Str(RequestID, requestID)
 				}
-			}
 
-			ctx = l.Logger().WithContext(ctx)
+				return logContext.
+					Str(HTTPMethod, r.Method).
+					Str(HTTPURLDetailsPath, r.URL.Path).
+					Interface(RequestHeaders, httputil.DumpHeader(r))
+			})
 
 			if next != nil {
 				next.ServeHTTP(wrappedWriter, r.WithContext(ctx))
 			}
 
-			op := logctx.GetOp(ctx)
 			status := wrappedWriter.Status()
 
-			l = zerolog.Ctx(ctx).With().
-				Str(Operation, op).
+			l := zerolog.Ctx(r.Context()).With().
 				Int(HTTPStatusCode, status).
 				Int(NetworkBytesWritten, wrappedWriter.BytesWritten()).
 				Dur(Duration, now().Sub(start))
@@ -154,11 +135,7 @@ func RequestLogger(log zerolog.Logger, shouldLog FnShouldLog) func(http.Handler)
 				event = logger.Info()
 			}
 
-			if op != "" {
-				event.Msg(op)
-			} else {
-				event.Msgf("[%s] %s", r.Method, r.URL)
-			}
+			event.Msgf("%d %s %s", status, r.Method, r.URL)
 		})
 	}
 }

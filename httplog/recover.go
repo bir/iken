@@ -1,9 +1,52 @@
 package httplog
 
 import (
+	"errors"
+	"fmt"
+	"net/http"
 	"runtime/debug"
 	"strings"
+
+	"github.com/rs/zerolog"
+
+	"github.com/bir/iken/httputil"
 )
+
+// ErrInternal is the default error returned from a panic.
+var ErrInternal = errors.New("internal error")
+
+// RecoverLogger returns a handler that call initializes Op in the context, and logs each request.
+func RecoverLogger(log zerolog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := log.WithContext(r.Context())
+
+			defer func() {
+				rErr := recover()
+				if rErr != nil {
+					var err error
+					switch t := rErr.(type) {
+					case string:
+						err = fmt.Errorf("%v: %w", t, ErrInternal)
+					case error:
+						err = t
+					default:
+						err = ErrInternal
+					}
+					s := string(debug.Stack())
+
+					zerolog.Ctx(ctx).Err(err).Strs(Stack, simplifyStack(s, stackSkip)).Msg("Panic")
+
+					httputil.HTTPInternalServerError(w, r)
+				}
+			}()
+
+			if next != nil {
+				next.ServeHTTP(w, r.WithContext(ctx))
+			}
+		})
+	}
+}
 
 var RecoverBasePath = initBasePath()
 
@@ -36,10 +79,6 @@ func cleanPaths(line *string) {
 		if mapLine(line, paths[n], prefixes[n]) {
 			return
 		}
-	}
-
-	if (*line)[0] == '\t' {
-		*line = (*line)[1:]
 	}
 }
 
@@ -77,12 +116,7 @@ func simplifyStack(stack string, skip int) []string {
 		}
 
 		if i%2 == 0 {
-			funcName = s
-			if strings.HasPrefix(funcName, RecoverBasePath) {
-				funcName = strings.TrimPrefix(s, RecoverBasePath)
-			}
-
-			funcName = funcName[0:strings.LastIndex(funcName, "(")]
+			funcName = s[0:strings.LastIndex(s, "(")]
 
 			continue
 		}
