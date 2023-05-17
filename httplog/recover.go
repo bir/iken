@@ -1,9 +1,46 @@
 package httplog
 
 import (
+	"fmt"
+	"net/http"
 	"runtime/debug"
 	"strings"
+
+	"github.com/rs/zerolog"
 )
+
+// RecoverLogger returns a handler that call initializes Op in the context, and logs each request.
+func RecoverLogger(log zerolog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := log.WithContext(r.Context())
+
+			defer func() {
+				rErr := recover()
+				if rErr != nil {
+					var err error
+					switch t := rErr.(type) {
+					case string:
+						err = fmt.Errorf("%v: %w", t, ErrInternal)
+					case error:
+						err = t
+					default:
+						err = ErrInternal
+					}
+					s := string(debug.Stack())
+
+					zerolog.Ctx(ctx).Err(err).Strs(Stack, simplifyStack(s, stackSkip)).Msg("Panic")
+
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				}
+			}()
+
+			if next != nil {
+				next.ServeHTTP(w, r.WithContext(ctx))
+			}
+		})
+	}
+}
 
 var RecoverBasePath = initBasePath()
 

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"runtime/debug"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -52,30 +51,10 @@ type FnShouldLog func(r *http.Request) (logRequest, logRequestBody, logResponseB
 var ErrInternal = errors.New("internal error")
 
 // RequestLogger returns a handler that call initializes Op in the context, and logs each request.
-func RequestLogger(log zerolog.Logger, shouldLog FnShouldLog) func(http.Handler) http.Handler { //nolint: funlen
+func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //nolint: funlen
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := logctx.SetOp(r.Context(), fmt.Sprintf("[%s] %s", r.Method, r.URL))
-
-			defer func() {
-				rErr := recover()
-				if rErr != nil {
-					var err error
-					switch t := rErr.(type) {
-					case string:
-						err = fmt.Errorf("%v: %w", t, ErrInternal)
-					case error:
-						err = t
-					default:
-						err = ErrInternal
-					}
-					s := string(debug.Stack())
-
-					zerolog.Ctx(ctx).Err(err).Strs(Stack, simplifyStack(s, stackSkip)).Msg("Panic")
-
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				}
-			}()
 
 			start := now()
 
@@ -102,7 +81,7 @@ func RequestLogger(log zerolog.Logger, shouldLog FnShouldLog) func(http.Handler)
 				wrappedWriter.Tee(responseBuffer)
 			}
 
-			l := log.Hook(zerolog.HookFunc(func(e *zerolog.Event, _ zerolog.Level, _ string) {
+			l := zerolog.Ctx(ctx).Hook(zerolog.HookFunc(func(e *zerolog.Event, _ zerolog.Level, _ string) {
 				op := logctx.GetOp(ctx)
 				e.Str(Operation, op)
 			})).
