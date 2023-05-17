@@ -20,15 +20,13 @@ func TestRecover(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		shouldLog     FnShouldLog
 		body          string
 		next          http.Handler
-		wantMessage   string
 		wantFirstLine string
 	}{
-		{"panic String", doLogs(true, true, true), "123", readPanic("test"), "test: internal error", "./recover_test.go:66 (iken/httplog.readPanic.func1)"},
-		{"panic Error", doLogs(true, true, true), "123", readPanic(errors.New("test")), "test", "./recover_test.go:66 (iken/httplog.readPanic.func1)"},
-		{"panic other", doLogs(true, true, true), "123", readPanic(1), "internal error", "./recover_test.go:66 (iken/httplog.readPanic.func1)"},
+		{"panic String", "123", readPanic("test"), "./recover_test.go:66 (iken/httplog.readPanic.func1)"},
+		{"panic Error", "123", readPanic(errors.New("test")), "./recover_test.go:66 (iken/httplog.readPanic.func1)"},
+		{"panic other", "123", readPanic(1), "./recover_test.go:66 (iken/httplog.readPanic.func1)"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -48,7 +46,8 @@ func TestRecover(t *testing.T) {
 			err := json.Unmarshal([]byte(got), &result)
 			assert.Nil(t, err, "json Unmarshal")
 
-			assert.Equal(t, result["key"], "value", "log context")
+			assert.Equal(t, "value", result["key"], "log context")
+			assert.Equal(t, "Panic", result["message"], "log context")
 
 			stack, ok := result["error.stack"].([]any)
 			assert.True(t, ok, "error.stack type")

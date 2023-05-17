@@ -80,10 +80,6 @@ func cleanPaths(line *string) {
 			return
 		}
 	}
-
-	if (*line)[0] == '\t' {
-		*line = (*line)[1:]
-	}
 }
 
 func simpleLine(line, funcName string) string {
@@ -120,12 +116,7 @@ func simplifyStack(stack string, skip int) []string {
 		}
 
 		if i%2 == 0 {
-			funcName = s
-			if strings.HasPrefix(funcName, RecoverBasePath) {
-				funcName = strings.TrimPrefix(s, RecoverBasePath)
-			}
-
-			funcName = funcName[0:strings.LastIndex(funcName, "(")]
+			funcName = s[0:strings.LastIndex(s, "(")]
 
 			continue
 		}
