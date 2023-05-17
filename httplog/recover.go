@@ -1,13 +1,19 @@
 package httplog
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
 	"strings"
 
 	"github.com/rs/zerolog"
+
+	"github.com/bir/iken/httputil"
 )
+
+// ErrInternal is the default error returned from a panic.
+var ErrInternal = errors.New("internal error")
 
 // RecoverLogger returns a handler that call initializes Op in the context, and logs each request.
 func RecoverLogger(log zerolog.Logger) func(http.Handler) http.Handler {
@@ -31,7 +37,7 @@ func RecoverLogger(log zerolog.Logger) func(http.Handler) http.Handler {
 
 					zerolog.Ctx(ctx).Err(err).Strs(Stack, simplifyStack(s, stackSkip)).Msg("Panic")
 
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					httputil.HTTPInternalServerError(w, r)
 				}
 			}()
 

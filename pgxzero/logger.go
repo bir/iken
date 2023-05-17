@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rs/zerolog"
 
+	"github.com/bir/iken/httplog"
 	"github.com/bir/iken/logctx"
 )
 
@@ -55,12 +56,12 @@ func (l *Logger) WithMapper(m LevelMapper) *Logger {
 func (l *Logger) Log(ctx context.Context, level tracelog.LogLevel, msg string, data map[string]any) {
 	if ctx != nil && (data == nil || data["request_id"] == nil) {
 		requestID := logctx.GetID(ctx)
-		if requestID != 0 {
+		if requestID != "" {
 			if data == nil {
 				data = make(map[string]interface{})
 			}
 
-			data["request_id"] = requestID
+			data[httplog.RequestID] = requestID
 		}
 	}
 

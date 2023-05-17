@@ -10,9 +10,6 @@ import (
 	"github.com/bir/iken/validation"
 )
 
-// InternalErrorFormat is the default error message returned for unhandled errors.
-const InternalErrorFormat = "Internal Server Error: %d"
-
 // ErrorHandlerFunc is useful to standardize the exception management of
 // requests.
 type ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
@@ -36,7 +33,7 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 
-	logctx.AddToContext(r.Context(), "internalError", err)
+	logctx.AddToContext(r.Context(), LogErrorMessage, err)
 
 	switch e := err.(type) { //nolint:errorlint,varnamelen // false positive
 	case *json.SyntaxError:
@@ -71,5 +68,25 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 
-	http.Error(w, fmt.Sprintf(InternalErrorFormat, logctx.GetID(r.Context())), http.StatusInternalServerError)
+	HTTPInternalServerError(w, r)
+}
+
+const (
+	// LogErrorMessage is used to report internal errors to the logging service.
+	LogErrorMessage = "error.message"
+
+	RequestIDHeader = "X-Request-Id"
+
+	// InternalErrorFormat is the default error message returned for unhandled errors if the request ID is available.
+	InternalErrorFormat = "Internal Server Error: Request %q"
+)
+
+func HTTPInternalServerError(w http.ResponseWriter, r *http.Request) {
+	reqID := r.Header.Get(RequestIDHeader)
+
+	if reqID != "" {
+		http.Error(w, fmt.Sprintf(InternalErrorFormat, reqID), http.StatusInternalServerError)
+	} else {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
 }

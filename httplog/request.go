@@ -2,8 +2,6 @@ package httplog
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -47,15 +45,14 @@ const stackSkip = 3
 // results.
 type FnShouldLog func(r *http.Request) (logRequest, logRequestBody, logResponseBody bool)
 
-// ErrInternal is the default error returned from a panic.
-var ErrInternal = errors.New("internal error")
+func LogRequestBody(_ *http.Request) (bool, bool, bool) { return true, true, false }
+
+func LogAll(_ *http.Request) (bool, bool, bool) { return true, true, true }
 
 // RequestLogger returns a handler that call initializes Op in the context, and logs each request.
 func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //nolint: funlen
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := logctx.SetOp(r.Context(), fmt.Sprintf("[%s] %s", r.Method, r.URL))
-
 			start := now()
 
 			var logRequest, logRequestBody, logResponse bool
@@ -65,9 +62,12 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 				logRequest, logRequestBody, logResponse = shouldLog(r)
 			}
 
+			requestID := r.Header.Get(httputil.RequestIDHeader)
+			ctx := logctx.SetID(r.Context(), requestID)
+
 			if !logRequest {
 				if next != nil {
-					next.ServeHTTP(w, r)
+					next.ServeHTTP(w, r.WithContext(ctx))
 				}
 
 				return
@@ -81,32 +81,32 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 				wrappedWriter.Tee(responseBuffer)
 			}
 
-			l := zerolog.Ctx(ctx).Hook(zerolog.HookFunc(func(e *zerolog.Event, _ zerolog.Level, _ string) {
-				op := logctx.GetOp(ctx)
-				e.Str(Operation, op)
-			})).
-				With().
-				Str(HTTPMethod, r.Method).
-				Str(HTTPURLDetailsPath, r.URL.Path).
-				Interface(RequestHeaders, httputil.DumpHeader(r))
+			zerolog.Ctx(ctx).UpdateContext(func(logContext zerolog.Context) zerolog.Context {
+				if logRequestBody {
+					body, err := httputil.DumpBody(r)
+					if err != nil {
+						panic(err) // Ignore coverage
+					}
 
-			if logRequestBody {
-				body, err := httputil.DumpBody(r)
-				if err != nil {
-					panic(err) // Ignore coverage
+					size := len(body)
+					logContext = logContext.Int(RequestSize, size)
+
+					if size > MaxRequestBodyLog {
+						logContext = logContext.Bytes(Request, body[:MaxRequestBodyLog])
+					} else {
+						logContext = logContext.Bytes(Request, body)
+					}
 				}
 
-				size := len(body)
-				l = l.Int(RequestSize, size)
-
-				if size > MaxRequestBodyLog {
-					l = l.Bytes(Request, body[:MaxRequestBodyLog])
-				} else {
-					l = l.Bytes(Request, body)
+				if requestID != "" {
+					logContext = logContext.Str(RequestID, requestID)
 				}
-			}
 
-			ctx = l.Logger().WithContext(ctx)
+				return logContext.
+					Str(HTTPMethod, r.Method).
+					Str(HTTPURLDetailsPath, r.URL.Path).
+					Interface(RequestHeaders, httputil.DumpHeader(r))
+			})
 
 			if next != nil {
 				next.ServeHTTP(wrappedWriter, r.WithContext(ctx))
@@ -114,7 +114,7 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 
 			status := wrappedWriter.Status()
 
-			l = zerolog.Ctx(ctx).With().
+			l := zerolog.Ctx(r.Context()).With().
 				Int(HTTPStatusCode, status).
 				Int(NetworkBytesWritten, wrappedWriter.BytesWritten()).
 				Dur(Duration, now().Sub(start))
@@ -135,12 +135,7 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 				event = logger.Info()
 			}
 
-			op := logctx.GetOp(ctx)
-			if op != "" {
-				event.Msg(op)
-			} else {
-				event.Msgf("[%s] %s", r.Method, r.URL)
-			}
+			event.Msgf("%d %s %s", status, r.Method, r.URL)
 		})
 	}
 }

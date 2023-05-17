@@ -17,7 +17,7 @@ func TestLogger_Log(t *testing.T) {
 	dataWithRequest := map[string]interface{}{"request_id": 123}
 	dataWithoutRequest := map[string]interface{}{"other": 123}
 
-	ctx := logctx.SetID(context.Background(), 121)
+	ctx := logctx.SetID(context.Background(), "121")
 	tests := []struct {
 		name  string
 		ctx   context.Context
@@ -34,8 +34,8 @@ func TestLogger_Log(t *testing.T) {
 		{"debug", nil, tracelog.LogLevelDebug, "debug", nil, "{\"level\":\"debug\",\"module\":\"tracelog\",\"message\":\"debug\"}\n"},
 		{"trace", nil, tracelog.LogLevelTrace, "trace", nil, "{\"level\":\"trace\",\"module\":\"tracelog\",\"message\":\"trace\"}\n"},
 		{"withID in Data", ctx, tracelog.LogLevelWarn, "ctx", dataWithRequest, "{\"level\":\"warn\",\"module\":\"tracelog\",\"request_id\":123,\"message\":\"ctx\"}\n"},
-		{"withID in Ctx", ctx, tracelog.LogLevelWarn, "ctx", dataWithoutRequest, "{\"level\":\"warn\",\"module\":\"tracelog\",\"other\":123,\"request_id\":121,\"message\":\"ctx\"}\n"},
-		{"withID in Ctx no data", ctx, tracelog.LogLevelWarn, "ctx", nil, "{\"level\":\"warn\",\"module\":\"tracelog\",\"request_id\":121,\"message\":\"ctx\"}\n"},
+		{"withID in Ctx", ctx, tracelog.LogLevelWarn, "ctx", dataWithoutRequest, "{\"level\":\"warn\",\"module\":\"tracelog\",\"http.request_id\":\"121\",\"other\":123,\"message\":\"ctx\"}\n"},
+		{"withID in Ctx no data", ctx, tracelog.LogLevelWarn, "ctx", nil, "{\"level\":\"warn\",\"module\":\"tracelog\",\"http.request_id\":\"121\",\"message\":\"ctx\"}\n"},
 	}
 
 	var logBuf bytes.Buffer
