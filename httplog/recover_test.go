@@ -24,18 +24,19 @@ func TestRecover(t *testing.T) {
 		next          http.Handler
 		wantFirstLine string
 	}{
-		{"panic String", "123", readPanic("test"), "./recover_test.go:65 (iken/httplog.readPanic.func1)"},
-		{"panic Error", "123", readPanic(errors.New("test")), "./recover_test.go:65 (iken/httplog.readPanic.func1)"},
-		{"panic other", "123", readPanic(1), "./recover_test.go:65 (iken/httplog.readPanic.func1)"},
+		{"panic String", "123", readPanic("test"), "./recover_test.go:66 (iken/httplog.readPanic.func1)"},
+		{"panic Error", "123", readPanic(errors.New("test")), "./recover_test.go:66 (iken/httplog.readPanic.func1)"},
+		{"panic other", "123", readPanic(1), "./recover_test.go:66 (iken/httplog.readPanic.func1)"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			logOutput := bytes.NewBuffer(nil)
 
-			h := RecoverLogger(zerolog.New(logOutput))
+			h := RecoverLogger()
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest("FOO", "/BAR", bytes.NewBufferString(tt.body))
+			r = r.WithContext(logctx.NewSubLoggerContext(zerolog.New(logOutput)))
 
 			now = startNow
 			h(tt.next).ServeHTTP(w, r)

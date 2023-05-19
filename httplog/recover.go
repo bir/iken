@@ -16,10 +16,10 @@ import (
 var ErrInternal = errors.New("internal error")
 
 // RecoverLogger returns a handler that call initializes Op in the context, and logs each request.
-func RecoverLogger(log zerolog.Logger) func(http.Handler) http.Handler {
+func RecoverLogger() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := log.WithContext(r.Context())
+			ctx := r.Context()
 
 			defer func() {
 				rErr := recover()
