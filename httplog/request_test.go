@@ -3,6 +3,7 @@ package httplog
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -23,29 +24,31 @@ func TestRequestLogger(t *testing.T) {
 	tests := []struct {
 		name         string
 		shouldLog    FnShouldLog
-		body         string
+		body         io.Reader
 		addRequestID bool
 		next         http.Handler
 		want         string
 	}{
-		{"default logs", nil, "DO NOT LOG ME", true, http.HandlerFunc(emptyNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com", "X-Request-Id":"default logs"},"op":"empty","http.status_code":0,"network.bytes_written":0,"duration":0.1,"message":"0 FOO /BAR", "http.request_id":"default logs"}
+		{"default logs", nil, bytes.NewBufferString("DO NOT LOG ME"), true, http.HandlerFunc(emptyNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com", "X-Request-Id":"default logs"},"op":"empty","http.status_code":0,"network.bytes_written":0,"duration":0.1,"message":"0 FOO /BAR", "http.request_id":"default logs"}
 `},
-		{"no op", nil, "DO NOT LOG ME", false, http.HandlerFunc(emptyOp), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"http.status_code":0,"network.bytes_written":0,"duration":0.1,"message":"0 FOO /BAR"}
+		{"no op", nil, bytes.NewBufferString("DO NOT LOG ME"), false, http.HandlerFunc(emptyOp), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"http.status_code":0,"network.bytes_written":0,"duration":0.1,"message":"0 FOO /BAR"}
 `},
-		{"default warn", nil, "DO NOT LOG ME", false, http.HandlerFunc(statusNext(404)), `{"level":"warn","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"http.status_code":404,"network.bytes_written":11,"duration":0.1,"message":"404 FOO /BAR"}
+		{"default warn", nil, bytes.NewBufferString("DO NOT LOG ME"), false, http.HandlerFunc(statusNext(404)), `{"level":"warn","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"http.status_code":404,"network.bytes_written":11,"duration":0.1,"message":"404 FOO /BAR"}
 `},
-		{"default err", nil, "DO NOT LOG ME", false, http.HandlerFunc(statusNext(503)), `{"level":"error","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"http.status_code":503,"network.bytes_written":11,"duration":0.1,"message":"503 FOO /BAR"}
+		{"default err", nil, bytes.NewBufferString("DO NOT LOG ME"), false, http.HandlerFunc(statusNext(503)), `{"level":"error","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"http.status_code":503,"network.bytes_written":11,"duration":0.1,"message":"503 FOO /BAR"}
 `},
-		{"no logs", doLogs(false, false, false), "DO NOT LOG ME", false, http.HandlerFunc(emptyNext), ""},
-		{"all logs", LogAll, "LOG ME", false, http.HandlerFunc(bodyNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"network.bytes_read":6,"request.body":"LOG ME","http.status_code":200,"network.bytes_written":4,"duration":0.1,"response.body":"TEST","message":"200 FOO /BAR"}
+		{"no logs", doLogs(false, false, false), bytes.NewBufferString("DO NOT LOG ME"), false, http.HandlerFunc(emptyNext), ""},
+		{"all logs", LogAll, bytes.NewBufferString("LOG ME"), false, http.HandlerFunc(bodyNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"network.bytes_read":6,"request.body":"LOG ME","http.status_code":200,"network.bytes_written":4,"duration":0.1,"response.body":"TEST","message":"200 FOO /BAR"}
 `},
-		{"request Body", LogRequestBody, "LOG ME", false, http.HandlerFunc(bodyNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"network.bytes_read":6,"request.body":"LOG ME","http.status_code":200,"network.bytes_written":4,"duration":0.1,"message":"200 FOO /BAR"}
+		{"request Body", LogRequestBody, bytes.NewBufferString("LOG ME"), false, http.HandlerFunc(bodyNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"network.bytes_read":6,"request.body":"LOG ME","http.status_code":200,"network.bytes_written":4,"duration":0.1,"message":"200 FOO /BAR"}
 `},
-		{"request Body read", LogRequestBody, "LOG ME", false, http.HandlerFunc(readNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"network.bytes_read":6,"request.body":"LOG ME","http.status_code":200,"network.bytes_written":6,"duration":0.1,"message":"200 FOO /BAR"}
+		{"request Body read", LogRequestBody, bytes.NewBufferString("LOG ME"), false, http.HandlerFunc(readNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"network.bytes_read":6,"request.body":"LOG ME","http.status_code":200,"network.bytes_written":6,"duration":0.1,"message":"200 FOO /BAR"}
 `},
-		{"response Body", doLogs(true, false, true), "LOG ME", false, http.HandlerFunc(bodyNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"http.status_code":200,"network.bytes_written":4,"duration":0.1,"response.body":"TEST","message":"200 FOO /BAR"}
+		{"response Body", doLogs(true, false, true), bytes.NewBufferString("LOG ME"), false, http.HandlerFunc(bodyNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"http.status_code":200,"network.bytes_written":4,"duration":0.1,"response.body":"TEST","message":"200 FOO /BAR"}
 `},
-		{"request Body too big", LogRequestBody, "12345678901", false, http.HandlerFunc(readNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"network.bytes_read":11,"request.body":"1234567890","http.status_code":200,"network.bytes_written":11,"duration":0.1,"message":"200 FOO /BAR"}
+		{"request Body too big", LogRequestBody, bytes.NewBufferString("12345678901"), false, http.HandlerFunc(readNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"network.bytes_read":11,"request.body":"1234567890","http.status_code":200,"network.bytes_written":11,"duration":0.1,"message":"200 FOO /BAR"}
+`},
+		{"error body", LogRequestBody, BadReader{}, false, http.HandlerFunc(readNext), `{"level":"info","http.method":"FOO","http.url_details.path":"/BAR","request.headers":{"FOO":"/BAR HTTP/1.1","Host":"example.com"},"request.body_error":"buf.ReadFrom:BadReader","http.status_code":200,"network.bytes_written":0,"duration":0.1,"message":"200 FOO /BAR"}
 `},
 	}
 	for _, tt := range tests {
@@ -55,7 +58,7 @@ func TestRequestLogger(t *testing.T) {
 			h := RequestLogger(tt.shouldLog)
 
 			w := httptest.NewRecorder()
-			r := httptest.NewRequest("FOO", "/BAR", bytes.NewBufferString(tt.body))
+			r := httptest.NewRequest("FOO", "/BAR", tt.body)
 
 			if tt.addRequestID {
 				r.Header.Set(httputil.RequestIDHeader, tt.name)
@@ -83,6 +86,12 @@ func TestRequestLogger(t *testing.T) {
 			assert.Equal(t, want, result, "logs")
 		})
 	}
+}
+
+type BadReader struct{}
+
+func (_ BadReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New("BadReader")
 }
 
 func emptyNext(_ http.ResponseWriter, r *http.Request) {
