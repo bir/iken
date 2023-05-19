@@ -23,6 +23,7 @@ const (
 	RequestID           = "http.request_id"
 	RequestHeaders      = "request.headers"
 	RequestSize         = "network.bytes_read"
+	RequestError        = "request.body_error"
 	Response            = "response.body"
 	TraceID             = "trace_id"
 	UserID              = "usr.id"
@@ -83,19 +84,7 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 
 			zerolog.Ctx(ctx).UpdateContext(func(logContext zerolog.Context) zerolog.Context {
 				if logRequestBody {
-					body, err := httputil.DumpBody(r)
-					if err != nil {
-						panic(err) // Ignore coverage
-					}
-
-					size := len(body)
-					logContext = logContext.Int(RequestSize, size)
-
-					if size > MaxRequestBodyLog {
-						logContext = logContext.Bytes(Request, body[:MaxRequestBodyLog])
-					} else {
-						logContext = logContext.Bytes(Request, body)
-					}
+					logContext = logBody(logContext, r)
 				}
 
 				if requestID != "" {
@@ -138,4 +127,22 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 			event.Msgf("%d %s %s", status, r.Method, r.URL)
 		})
 	}
+}
+
+func logBody(logContext zerolog.Context, r *http.Request) zerolog.Context {
+	body, err := httputil.DumpBody(r)
+	if err != nil {
+		logContext = logContext.Str(RequestError, err.Error())
+	} else {
+		size := len(body)
+		logContext = logContext.Int(RequestSize, size)
+
+		if size > MaxRequestBodyLog {
+			logContext = logContext.Bytes(Request, body[:MaxRequestBodyLog])
+		} else {
+			logContext = logContext.Bytes(Request, body)
+		}
+	}
+
+	return logContext
 }
