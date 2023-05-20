@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-var NowFunc = time.Now
+var nowFunc = time.Now
 
 func EndOfDay(t time.Time) time.Time {
 	year, month, day := t.Date()
@@ -29,7 +29,17 @@ func EndOfYear(t time.Time) time.Time {
 }
 
 // ToTime parses an offset duration string.
-// The calculation is based on an optional anchor (default is NOW) plus a duration.
+// The calculation is based on an optional anchor (default is NOW) plus an offset duration.
+//
+// shortcut for TimeToTime(time.Now())
+func ToTime(duration string, location *time.Location) (time.Time, error) {
+	t := nowFunc()
+
+	return TimeToTime(t, duration, location)
+}
+
+// TimeToTime parses an offset duration string.
+// The calculation is based on an optional anchor (default is the passed in time) plus an offset duration.
 // Valid Anchors:
 //
 //	EOD will calculate the end of day
@@ -46,8 +56,7 @@ func EndOfYear(t time.Time) time.Time {
 //	"EOY" = end of year
 //	"30m" = 30 minutes
 //	"" = now
-func ToTime(duration string, location *time.Location) (time.Time, error) {
-	t := NowFunc()
+func TimeToTime(t time.Time, duration string, location *time.Location) (time.Time, error) {
 	if location != nil {
 		t = t.In(location)
 	}

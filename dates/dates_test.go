@@ -1,14 +1,12 @@
-package dates_test
+package dates
 
 import (
 	"reflect"
 	"testing"
 	"time"
-
-	"github.com/bir/iken/dates"
 )
 
-func nowFunc(now time.Time) func() time.Time {
+func testNowFunc(now time.Time) func() time.Time {
 	return func() time.Time {
 		return now
 	}
@@ -86,9 +84,9 @@ func TestToTime(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			dates.NowFunc = nowFunc(test.now)
+			nowFunc = testNowFunc(test.now)
 
-			got, err := dates.ToTime(test.duration, test.location)
+			got, err := ToTime(test.duration, test.location)
 			if (err != nil) != test.wantErr {
 				t.Errorf("ToTime() error = %v, wantErr %v", err, test.wantErr)
 				return
@@ -134,7 +132,7 @@ func TestAs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := dates.As(test.now, test.location)
+			got := As(test.now, test.location)
 			if !got.Equal(test.want) {
 				t.Errorf("As() got = %v, want %v", got, test.want)
 			}
