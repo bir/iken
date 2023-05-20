@@ -31,7 +31,7 @@ func EndOfYear(t time.Time) time.Time {
 // ToTime parses an offset duration string.
 // The calculation is based on an optional anchor (default is NOW) plus an offset duration.
 //
-// shortcut for TimeToTime(time.Now())
+// shortcut for TimeToTime(time.Now()).
 func ToTime(duration string, location *time.Location) (time.Time, error) {
 	t := nowFunc()
 
