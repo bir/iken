@@ -12,7 +12,7 @@ import (
 	"github.com/bir/iken/validation"
 )
 
-const errFormat = "%s parameter invalid %s : %q : %w"
+const errFormat = "parameter invalid %s : %q : %w"
 
 func GetString(r *http.Request, name string, required bool) (string, error) {
 	param := chi.URLParam(r, name)
@@ -35,7 +35,7 @@ func GetInt32(r *http.Request, name string, required bool) (*int32, error) {
 
 	i, err := strconv.ParseInt(s, 10, 32)
 	if err != nil {
-		return nil, validation.NewError(name, fmt.Errorf(errFormat, name, "int32", s, err)) //nolint: wrapcheck
+		return nil, validation.NewError(name, fmt.Errorf(errFormat, "int32", s, err)) //nolint: wrapcheck
 	}
 
 	i32 := int32(i)
@@ -51,7 +51,7 @@ func GetInt(r *http.Request, name string, required bool) (*int, error) {
 
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		return nil, validation.NewError(name, fmt.Errorf(errFormat, name, "int", s, err)) //nolint: wrapcheck
+		return nil, validation.NewError(name, fmt.Errorf(errFormat, "int", s, err)) //nolint: wrapcheck
 	}
 
 	return &i, nil
@@ -65,7 +65,7 @@ func GetTime(r *http.Request, name string, required bool) (time.Time, error) {
 
 	timestamp, err := time.Parse(time.RFC3339, s)
 	if err != nil {
-		return time.Time{}, validation.NewError(name, fmt.Errorf(errFormat, name, "date", s, err)) //nolint: wrapcheck
+		return time.Time{}, validation.NewError(name, fmt.Errorf(errFormat, "date", s, err)) //nolint: wrapcheck
 	}
 
 	return timestamp, nil
@@ -91,7 +91,7 @@ func GetInt32Array(r *http.Request, name string, required bool) ([]int32, error)
 	for i, p := range pp {
 		i32, err := strconv.ParseInt(p, 10, 32)
 		if err != nil {
-			return nil, validation.NewError(name, fmt.Errorf(errFormat, name, "int32", p, err)) //nolint: wrapcheck
+			return nil, validation.NewError(name, fmt.Errorf(errFormat, "int32", p, err)) //nolint: wrapcheck
 		}
 
 		out[i] = int32(i32)
