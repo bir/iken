@@ -75,18 +75,19 @@ func (ee Errors) Keys() []string {
 
 func (ee *Errors) MarshalJSON() ([]byte, error) {
 	out := make(map[string][]string)
+
 	for k, errs := range *ee {
 		for _, e := range errs {
 			out[k] = append(out[k], e.Error())
 		}
 	}
 
-	return json.Marshal(out)
+	return json.Marshal(out) //nolint: wrapcheck
 }
 
 // New returns a single validation error for the field with msg.
 func New(field string, msg string) error {
-	return (&Errors{}).Add(field, errors.New(msg))
+	return (&Errors{}).Add(field, errors.New(msg)) //nolint: goerr113
 }
 
 // NewError returns a single validation error for the field with the embedded error.
@@ -101,14 +102,18 @@ func Join(elems []error, sep string) string {
 	case 1:
 		return elems[0].Error()
 	}
+
 	n := len(sep) * (len(elems) - 1)
+
 	for i := 0; i < len(elems); i++ {
 		n += len(elems[i].Error())
 	}
 
 	var b strings.Builder
+
 	b.Grow(n)
 	b.WriteString(elems[0].Error())
+
 	for _, s := range elems[1:] {
 		b.WriteString(sep)
 		b.WriteString(s.Error())
