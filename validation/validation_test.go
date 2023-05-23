@@ -1,59 +1,73 @@
 package validation_test
 
 import (
+	"encoding/json"
+	"errors"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/bir/iken/validation"
 )
 
 func TestErrors_Add(t *testing.T) {
 	tests := []struct {
-		name  string
-		ee    validation.Errors
-		field string
-		msg   string
-		want  string
+		name     string
+		ee       validation.Errors
+		field    string
+		msg      string
+		want     string
+		wantJson string
 	}{
-		{"basic", *(&validation.Errors{}).Add("a", "b"), "test", "bad", "a: b; test: bad."},
-		{"existing", *(&validation.Errors{}).Add("a", "b"), "a", "x", "a: b, x."},
-		{"basic nil", nil, "test", "bad", "test: bad."},
+		{"empty", nil, "", "", "", `{}`},
+		{"empty add", nil, "test", "bad", "test: bad.", `{"test":["bad"]}`},
+		{"add new", *(&validation.Errors{}).Add("a", errors.New("b")), "test", "bad", "a: b; test: bad.", `{"a":["b"],"test":["bad"]}`},
+		{"add existing", *(&validation.Errors{}).Add("a", errors.New("b")), "a", "x", "a: b, x.", `{"a":["b","x"]}`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.ee.Add(tt.field, tt.msg); got.Error() != tt.want {
-				t.Errorf("Add() = `%v`, want `%v`", got.Error(), tt.want)
+			got := &tt.ee
+			if tt.field != "" {
+				got = tt.ee.Add(tt.field, errors.New(tt.msg))
 			}
+			assert.Equal(t, tt.want, got.Error())
+
+			b, err := json.Marshal(got)
+			assert.Nil(t, err)
+
+			assert.Equal(t, tt.wantJson, string(b))
 		})
 	}
 }
 
 func TestErrors_Error(t *testing.T) {
 	var ee validation.Errors
-	if ee.Error() != "" {
-		t.Errorf("Error() = `%v`, want ``", ee.Error())
-	}
+	assert.Empty(t, ee.Error())
 }
 
 func TestErrors_GetErr(t *testing.T) {
 	var ee validation.Errors
-	if ee.GetErr() != nil {
-		t.Errorf("GetErr() = `%v`, want `nil`", ee.GetErr())
-	}
-	_ = ee.Add("a","b")
+	assert.Nil(t, ee.GetErr())
 
-	if ee.GetErr() == nil {
-		t.Errorf("GetErr() = `nil`, want `a: b.`")
-	}
+	_ = ee.Add("a", errors.New("b"))
+
+	assert.NotNil(t, ee.GetErr())
+	assert.Equal(t, "a: b.", ee.GetErr().Error())
 }
 
 func TestErrors_New(t *testing.T) {
-	err := validation.New("a","b")
-	if err == nil {
-		t.Errorf("New() = `nil`, want `a: b.`")
-	}
+	err := validation.New("a", "b")
+	assert.NotEmpty(t, err)
+	assert.Equal(t, "a: b.", err.Error())
+}
 
-	if err.Error() != "a: b." {
-		t.Errorf("New() = `%v`, want `a: b.`", err)
-	}
+func TestErrors_NewError(t *testing.T) {
+	err := validation.NewError("a", errors.New("b"))
+	assert.NotEmpty(t, err)
+	assert.Equal(t, "a: b.", err.Error())
+}
 
+func TestJoin(t *testing.T) {
+	s := validation.Join(nil, "|")
+	assert.Empty(t, s)
 }

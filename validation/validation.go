@@ -1,6 +1,8 @@
 package validation
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -9,10 +11,10 @@ import (
 )
 
 // Messages are the validation failures for a given field.
-type Messages []string //nolint: errname
+type Messages []error //nolint: errname
 
 func (mm Messages) Error() string {
-	return strings.Join(mm, ", ")
+	return Join(mm, ", ")
 }
 
 // Errors maps fields to the list of validation failures.
@@ -31,7 +33,7 @@ func (ee Errors) Error() string {
 
 // Add appends the field and msg to the current list of errors.  Add will initialize the Errors
 // object if it is not initialized.
-func (ee *Errors) Add(field, msg string) *Errors {
+func (ee *Errors) Add(field string, msg error) *Errors {
 	if *ee == nil {
 		*ee = Errors{}
 	}
@@ -71,7 +73,51 @@ func (ee Errors) Keys() []string {
 	return keys
 }
 
+func (ee *Errors) MarshalJSON() ([]byte, error) {
+	out := make(map[string][]string)
+
+	for k, errs := range *ee {
+		for _, e := range errs {
+			out[k] = append(out[k], e.Error())
+		}
+	}
+
+	return json.Marshal(out) //nolint: wrapcheck
+}
+
 // New returns a single validation error for the field with msg.
-func New(field, msg string) error {
+func New(field string, msg string) error {
+	return (&Errors{}).Add(field, errors.New(msg)) //nolint: goerr113
+}
+
+// NewError returns a single validation error for the field with the embedded error.
+func NewError(field string, msg error) error {
 	return (&Errors{}).Add(field, msg)
+}
+
+func Join(elems []error, sep string) string {
+	switch len(elems) {
+	case 0:
+		return ""
+	case 1:
+		return elems[0].Error()
+	}
+
+	n := len(sep) * (len(elems) - 1)
+
+	for i := 0; i < len(elems); i++ {
+		n += len(elems[i].Error())
+	}
+
+	var b strings.Builder
+
+	b.Grow(n)
+	b.WriteString(elems[0].Error())
+
+	for _, s := range elems[1:] {
+		b.WriteString(sep)
+		b.WriteString(s.Error())
+	}
+
+	return b.String()
 }

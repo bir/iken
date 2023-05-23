@@ -26,7 +26,7 @@ func TestErrorHandler(t *testing.T) {
 		{"unknown error", context.Background(), errs.WithStack("unknown error", 0), "", 500, "Internal Server Error\n"},
 		{"unknown error w/request ID", context.Background(), errs.WithStack("unknown error", 0), "FOO", 500, "Internal Server Error: Request \"FOO\"\n"},
 		{"json error", context.Background(), json.Unmarshal([]byte("bad json"), &nop), "", 400, `"invalid character 'b' looking for beginning of value"` + "\n"},
-		{"validation error", context.Background(), (&validation.Errors{}).Add("name", "bad"), "", 400, `{"name":["bad"]}` + "\n"},
+		{"validation error", context.Background(), validation.New("name", "bad"), "", 400, `{"name":["bad"]}` + "\n"},
 		{"auth error unauthorized", context.Background(), httputil.ErrUnauthorized, "", 401, `Unauthorized` + "\n"},
 		{"auth error forbidden", context.Background(), httputil.ErrForbidden, "", 403, `Forbidden` + "\n"},
 		{"auth error basic", context.Background(), httputil.ErrBasicAuthenticate, "", 401, `Unauthorized` + "\n"},
