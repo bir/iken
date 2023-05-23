@@ -1,11 +1,15 @@
 package params
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetInt32(t *testing.T) {
@@ -133,4 +137,17 @@ func TestGetTime(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestURLParam(t *testing.T) {
+	r, _ := http.NewRequest("GET", "/", nil)
+	rctx := chi.NewRouteContext()
+	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
+	rctx.URLParams.Add("id", "12345")
+
+	got, err := GetInt(r, "id", true)
+
+	assert.Nil(t, err)
+	assert.NotEmpty(t, got)
+	assert.Equal(t, *got, 12345)
 }
