@@ -41,6 +41,41 @@ func TestGetInt32(t *testing.T) {
 	}
 }
 
+func TestGetInt(t *testing.T) {
+	tests := []struct {
+		name     string
+		r        *http.Request
+		param    string
+		required bool
+		want     int
+		wantErr  bool
+	}{
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", true, 123, false},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, 0, true},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, 0, false},
+		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, 0, true},
+		{"max", httptest.NewRequest("GET", "/BAR?foo=9223372036854775807", nil), "foo", true, 9223372036854775807, false},
+		{"over max", httptest.NewRequest("GET", "/BAR?foo=19223372036854775807", nil), "foo", true, 0, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetInt(tt.r, tt.param, tt.required)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetInt() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if got == nil {
+				if tt.want != 0 {
+					t.Errorf("GetInt() got = %v, want %v", got, tt.want)
+				}
+			} else if !reflect.DeepEqual(*got, tt.want) {
+				t.Errorf("GetInt() got = %v, want %v", *got, tt.want)
+			}
+		})
+	}
+}
+
 func TestGetInt32Array(t *testing.T) {
 	tests := []struct {
 		name     string

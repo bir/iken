@@ -43,6 +43,20 @@ func GetInt32(r *http.Request, name string, required bool) (*int32, error) {
 	return &i32, nil
 }
 
+func GetInt(r *http.Request, name string, required bool) (*int, error) {
+	s, err := GetString(r, name, required)
+	if err != nil || len(s) == 0 {
+		return nil, err
+	}
+
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return nil, validation.New(name, fmt.Sprintf(errFormat, name, "int", s, err)) //nolint: wrapcheck
+	}
+
+	return &i, nil
+}
+
 func GetTime(r *http.Request, name string, required bool) (time.Time, error) {
 	s, err := GetString(r, name, required)
 	if err != nil || len(s) == 0 {
