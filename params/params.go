@@ -20,7 +20,7 @@ func GetString(r *http.Request, name string, required bool) (string, error) {
 	}
 
 	if required && len(param) == 0 {
-		return "", ErrNotFound
+		return "", fmt.Errorf("%s: %w", name, ErrNotFound)
 	}
 
 	return param, nil
@@ -34,7 +34,7 @@ func GetInt32(r *http.Request, name string, required bool) (*int32, error) {
 
 	i, err := strconv.ParseInt(s, 10, 32)
 	if err != nil {
-		return nil, fmt.Errorf("invalid int: %w", err)
+		return nil, fmt.Errorf("invalid int32: %w", err)
 	}
 
 	i32 := int32(i)
@@ -64,7 +64,7 @@ func GetTime(r *http.Request, name string, required bool) (time.Time, error) {
 
 	timestamp, err := time.Parse(time.RFC3339, s)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("invalid date: %w", err)
+		return time.Time{}, fmt.Errorf("invalid RFC3339 date: %w", err)
 	}
 
 	return timestamp, nil
@@ -90,7 +90,7 @@ func GetInt32Array(r *http.Request, name string, required bool) ([]int32, error)
 	for i, p := range pp {
 		i32, err := strconv.ParseInt(p, 10, 32)
 		if err != nil {
-			return nil, fmt.Errorf("invalid int:%q: %w", p, err)
+			return nil, fmt.Errorf("invalid int32:%q: %w", p, err)
 		}
 
 		out[i] = int32(i32)
