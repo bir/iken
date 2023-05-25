@@ -37,15 +37,11 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 
 	switch e := err.(type) { //nolint:errorlint,varnamelen // false positive
 	case *json.SyntaxError:
-		if err := JSONWrite(w, http.StatusBadRequest, e.Error()); err != nil {
-			panic(err) // Ignore for coverage
-		}
+		JSONWrite(w, r, http.StatusBadRequest, fmt.Sprintf("%s at offset %d", e.Error(), e.Offset))
 
 		return
 	case *validation.Errors:
-		if err := JSONWrite(w, http.StatusBadRequest, e); err != nil {
-			panic(err) // Ignore for coverage
-		}
+		JSONWrite(w, r, http.StatusBadRequest, e)
 
 		return
 	case AuthError:

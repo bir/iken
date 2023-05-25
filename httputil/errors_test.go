@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/bir/iken/errs"
 	"github.com/bir/iken/httputil"
 	"github.com/bir/iken/logctx"
@@ -25,8 +27,8 @@ func TestErrorHandler(t *testing.T) {
 		{"nil error", context.Background(), nil, "", 200, ""},
 		{"unknown error", context.Background(), errs.WithStack("unknown error", 0), "", 500, "Internal Server Error\n"},
 		{"unknown error w/request ID", context.Background(), errs.WithStack("unknown error", 0), "FOO", 500, "Internal Server Error: Request \"FOO\"\n"},
-		{"json error", context.Background(), json.Unmarshal([]byte("bad json"), &nop), "", 400, `"invalid character 'b' looking for beginning of value"` + "\n"},
-		{"validation error", context.Background(), validation.New("name", "bad"), "", 400, `{"name":["bad"]}` + "\n"},
+		{"json error", context.Background(), json.Unmarshal([]byte("bad json"), &nop), "", 400, `"invalid character 'b' looking for beginning of value at offset 1"`},
+		{"validation error", context.Background(), validation.New("name", "bad"), "", 400, `{"name":["bad"]}`},
 		{"auth error unauthorized", context.Background(), httputil.ErrUnauthorized, "", 401, `Unauthorized` + "\n"},
 		{"auth error forbidden", context.Background(), httputil.ErrForbidden, "", 403, `Forbidden` + "\n"},
 		{"auth error basic", context.Background(), httputil.ErrBasicAuthenticate, "", 401, `Unauthorized` + "\n"},
@@ -44,13 +46,10 @@ func TestErrorHandler(t *testing.T) {
 			}
 
 			httputil.ErrorHandler(w, r, test.err)
-			if w.Code != test.status {
-				t.Errorf("ErrorHandler status got = `%v`, wantLog `%v`", w.Code, test.status)
-			}
+			assert.Equal(t, test.status, w.Code, "status")
 
-			if w.Body.String() != test.body {
-				t.Errorf("ErrorHandler body got = `%v`, wantLog `%v`", w.Body.String(), test.body)
-			}
+			assert.Equal(t, test.body, w.Body.String(), "body")
+
 		})
 	}
 }
