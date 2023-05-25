@@ -13,76 +13,74 @@ import (
 
 var ErrNotFound = errors.New("not found")
 
-func GetString(r *http.Request, name string, required bool) (string, error) {
+func GetString(r *http.Request, name string, required bool) (string, bool, error) {
 	param := chi.URLParam(r, name)
 	if len(param) == 0 {
 		param = r.URL.Query().Get(name)
 	}
 
 	if required && len(param) == 0 {
-		return "", fmt.Errorf("%s: %w", name, ErrNotFound)
+		return "", false, fmt.Errorf("%s: %w", name, ErrNotFound)
 	}
 
-	return param, nil
+	return param, true, nil
 }
 
-func GetInt32(r *http.Request, name string, required bool) (*int32, error) {
-	s, err := GetString(r, name, required)
-	if err != nil || len(s) == 0 {
-		return nil, err
+func GetInt32(r *http.Request, name string, required bool) (int32, bool, error) {
+	s, ok, err := GetString(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return 0, false, err
 	}
 
 	i, err := strconv.ParseInt(s, 10, 32)
 	if err != nil {
-		return nil, fmt.Errorf("invalid int32: %w", err)
+		return 0, false, fmt.Errorf("invalid int32: %w", err)
 	}
 
-	i32 := int32(i)
-
-	return &i32, nil
+	return int32(i), true, nil
 }
 
-func GetInt(r *http.Request, name string, required bool) (*int, error) {
-	s, err := GetString(r, name, required)
-	if err != nil || len(s) == 0 {
-		return nil, err
+func GetInt(r *http.Request, name string, required bool) (int, bool, error) {
+	s, ok, err := GetString(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return 0, false, err
 	}
 
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		return nil, fmt.Errorf("invalid int: %w", err)
+		return 0, false, fmt.Errorf("invalid int: %w", err)
 	}
 
-	return &i, nil
+	return i, true, nil
 }
 
-func GetTime(r *http.Request, name string, required bool) (time.Time, error) {
-	s, err := GetString(r, name, required)
-	if err != nil || len(s) == 0 {
-		return time.Time{}, err
+func GetTime(r *http.Request, name string, required bool) (time.Time, bool, error) {
+	s, ok, err := GetString(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return time.Time{}, false, err
 	}
 
 	timestamp, err := time.Parse(time.RFC3339, s)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("invalid RFC3339 date: %w", err)
+		return time.Time{}, false, fmt.Errorf("invalid RFC3339 date: %w", err)
 	}
 
-	return timestamp, nil
+	return timestamp, true, nil
 }
 
-func GetStringArray(r *http.Request, name string, required bool) ([]string, error) {
-	s, err := GetString(r, name, required)
-	if err != nil || len(s) == 0 {
-		return nil, err
+func GetStringArray(r *http.Request, name string, required bool) ([]string, bool, error) {
+	s, ok, err := GetString(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return nil, false, err
 	}
 
-	return strings.Split(s, ","), nil
+	return strings.Split(s, ","), true, nil
 }
 
-func GetInt32Array(r *http.Request, name string, required bool) ([]int32, error) {
-	pp, err := GetStringArray(r, name, required)
-	if err != nil || len(pp) == 0 {
-		return nil, err
+func GetInt32Array(r *http.Request, name string, required bool) ([]int32, bool, error) {
+	pp, ok, err := GetStringArray(r, name, required)
+	if err != nil || len(pp) == 0 || !ok {
+		return nil, false, err
 	}
 
 	out := make([]int32, len(pp))
@@ -90,11 +88,11 @@ func GetInt32Array(r *http.Request, name string, required bool) ([]int32, error)
 	for i, p := range pp {
 		i32, err := strconv.ParseInt(p, 10, 32)
 		if err != nil {
-			return nil, fmt.Errorf("invalid int32:%q: %w", p, err)
+			return nil, false, fmt.Errorf("invalid int32:%q: %w", p, err)
 		}
 
 		out[i] = int32(i32)
 	}
 
-	return out, nil
+	return out, true, nil
 }
