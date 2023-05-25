@@ -3,6 +3,7 @@ package httputil_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http/httptest"
 	"testing"
 
@@ -15,6 +16,9 @@ import (
 )
 
 func TestErrorHandler(t *testing.T) {
+	canceledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+
 	nop := "ignore"
 	tests := []struct {
 		name      string
@@ -32,6 +36,8 @@ func TestErrorHandler(t *testing.T) {
 		{"auth error unauthorized", context.Background(), httputil.ErrUnauthorized, "", 401, `Unauthorized` + "\n"},
 		{"auth error forbidden", context.Background(), httputil.ErrForbidden, "", 403, `Forbidden` + "\n"},
 		{"auth error basic", context.Background(), httputil.ErrBasicAuthenticate, "", 401, `Unauthorized` + "\n"},
+		{"nested", context.Background(), fmt.Errorf("wrap:%w", fmt.Errorf("wrap2:%w", httputil.ErrBasicAuthenticate)), "", 401, `Unauthorized` + "\n"},
+		{"canceled", canceledCtx, canceledCtx.Err(), "FOO", 499, "context canceled\n"},
 	}
 
 	for _, test := range tests {

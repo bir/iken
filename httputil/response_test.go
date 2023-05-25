@@ -2,6 +2,7 @@ package httputil
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,22 +24,22 @@ func TestHTMLWrite(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("FOO", "/BAR", nil)
 
-	HTMLWrite(w, r, 613, "I'm HTML")
+	HTMLWrite(w, r, http.StatusTeapot, http.StatusText(http.StatusTeapot))
 
 	assert.Equal(t, w.Header().Get(ContentType), TextHTML)
-	assert.Equal(t, w.Code, 613)
-	assert.Equal(t, w.Body.String(), "I'm HTML")
+	assert.Equal(t, w.Code, http.StatusTeapot)
+	assert.Equal(t, w.Body.String(), http.StatusText(http.StatusTeapot))
 }
 
 func TestJSONWrite(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("FOO", "/BAR", nil)
 
-	JSONWrite(w, r, 613, "I'm HTML")
+	JSONWrite(w, r, http.StatusTeapot, http.StatusText(http.StatusTeapot))
 
 	assert.Equal(t, w.Header().Get(ContentType), ApplicationJSON)
-	assert.Equal(t, w.Code, 613)
-	assert.Equal(t, w.Body.String(), `"I'm HTML"`)
+	assert.Equal(t, w.Code, http.StatusTeapot)
+	assert.Equal(t, w.Body.String(), fmt.Sprintf("%q", http.StatusText(http.StatusTeapot)))
 
 	// Fail
 	w = httptest.NewRecorder()
