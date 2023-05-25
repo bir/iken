@@ -1,6 +1,7 @@
 package httputil
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +14,9 @@ import (
 // ErrorHandlerFunc is useful to standardize the exception management of
 // requests.
 type ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+
+// StatusContextCancelled - reported when the context is cancelled.  Most likely caused by lost connections.
+const StatusContextCancelled = 499
 
 // ErrorHandler provides some standard handling for errors in an http request
 // flow.
@@ -35,36 +39,28 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 
 	logctx.AddToContext(r.Context(), LogErrorMessage, err)
 
-	switch e := err.(type) { //nolint:errorlint,varnamelen // false positive
-	case *json.SyntaxError:
-		JSONWrite(w, r, http.StatusBadRequest, fmt.Sprintf("%s at offset %d", e.Error(), e.Offset))
+	var (
+		jsonErr       *json.SyntaxError
+		validationErr *validation.Errors
+	)
 
-		return
-	case *validation.Errors:
-		JSONWrite(w, r, http.StatusBadRequest, e)
-
-		return
-	case AuthError:
-		if errors.Is(e, ErrForbidden) {
-			http.Error(w, e.Error(), http.StatusForbidden)
-
-			return
-		}
-
-		msg := e.Error()
-
-		if errors.Is(e, ErrBasicAuthenticate) {
-			w.Header().Set("WWW-Authenticate", "Basic realm=Restricted")
-
-			msg = "Unauthorized"
-		}
-
-		http.Error(w, msg, http.StatusUnauthorized)
-
-		return
+	switch {
+	case errors.Is(err, context.Canceled):
+		http.Error(w, err.Error(), StatusContextCancelled)
+	case errors.Is(err, ErrForbidden):
+		http.Error(w, err.Error(), http.StatusForbidden)
+	case errors.Is(err, ErrBasicAuthenticate):
+		w.Header().Set("WWW-Authenticate", "Basic realm=Restricted")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	case errors.Is(err, ErrUnauthorized):
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+	case errors.As(err, &jsonErr):
+		JSONWrite(w, r, http.StatusBadRequest, fmt.Sprintf("%s at offset %d", jsonErr.Error(), jsonErr.Offset))
+	case errors.As(err, &validationErr):
+		JSONWrite(w, r, http.StatusBadRequest, validationErr)
+	default:
+		HTTPInternalServerError(w, r)
 	}
-
-	HTTPInternalServerError(w, r)
 }
 
 const (
