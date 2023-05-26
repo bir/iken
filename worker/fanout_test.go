@@ -1,8 +1,12 @@
 package worker_test
 
 import (
+	"fmt"
+	"sort"
 	"sync/atomic"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/bir/iken/worker"
 )
@@ -71,12 +75,71 @@ func TestNewFanOut(t *testing.T) {
 			sum := int64(0)
 			w.Process(func(i int) {
 				atomic.AddInt64(&sum, int64(i))
-			},
-			)
+			})
 
-			if sum != tt.out {
-				t.Errorf("FanOut() = %v, want %v", sum, tt.out)
-			}
+			assert.Equal(t, tt.out, sum)
 		})
 	}
+}
+
+func ExampleNewFanOut() {
+	type Request struct {
+		Name  string
+		Index int
+	}
+
+	type Reply struct {
+		Name  string
+		Index int
+		Size  int
+	}
+
+	inputs := []Request{{"A", 0}, {"BBBB", 1}, {"CCCCCCCCCCC", 2}}
+
+	w := worker.NewFanOut[Request](10, 0)
+
+	go func() {
+		// Call invoke once per input data.
+		for _, i := range inputs {
+			w.Invoke(i)
+		}
+
+		// Call worker.FanOut.Close when all inputs are loaded.
+		w.Close()
+	}()
+
+	// Unbuffered reply channel, buffer size is a tunable parameter available to the implementation
+	replies := make(chan Reply)
+
+	go func() {
+		// Process and close must be executed in a separate go routine, unless the reply channel
+		// is sufficiently buffered.
+
+		w.Process(func(r Request) {
+			// Do the "work".  In this example just get the size of the name.
+			replies <- Reply{
+				Name:  r.Name,
+				Index: r.Index,
+				Size:  len(r.Name),
+			}
+		})
+
+		// When Process returns, all inputs have been handled.
+		close(replies)
+	}()
+
+	var out []Reply
+	for r := range replies {
+		out = append(out, r)
+	}
+
+	// Sort the results in descending size
+	sort.Slice(out, func(i int, j int) bool {
+		return out[i].Size > out[j].Size
+	})
+
+	fmt.Println(out)
+
+	// Output:
+	// [{CCCCCCCCCCC 2 11} {BBBB 1 4} {A 0 1}]
 }
