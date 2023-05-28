@@ -21,8 +21,8 @@ func HTMLWrite(w http.ResponseWriter, r *http.Request, code int, data string) {
 }
 
 func Write(w http.ResponseWriter, r *http.Request, contentType string, code int, data []byte) {
-	w.WriteHeader(code)
 	w.Header().Set(ContentType, contentType)
+	w.WriteHeader(code)
 
 	if _, err := w.Write(data); err != nil {
 		ErrorHandler(w, r, err)
