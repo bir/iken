@@ -1,6 +1,7 @@
 package chain_test
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -58,6 +59,9 @@ func TestNew(t *testing.T) {
 func testHandler(c2 chain.Chain) string {
 	r := httptest.NewRecorder()
 	c2.Handler(http.HandlerFunc(nop)).ServeHTTP(r, nil)
-	r.Body.String()
-	return r.Body.String()
+
+	result := r.Result()
+	b, _ := io.ReadAll(result.Body)
+
+	return string(b)
 }

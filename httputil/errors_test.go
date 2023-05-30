@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http/httptest"
 	"testing"
 
@@ -52,10 +53,12 @@ func TestErrorHandler(t *testing.T) {
 			}
 
 			httputil.ErrorHandler(w, r, test.err)
-			assert.Equal(t, test.status, w.Code, "status")
 
-			assert.Equal(t, test.body, w.Body.String(), "body")
+			result := w.Result()
+			b, _ := io.ReadAll(result.Body)
 
+			assert.Equal(t, test.status, result.StatusCode, "status")
+			assert.Equal(t, test.body, string(b), "body")
 		})
 	}
 }
