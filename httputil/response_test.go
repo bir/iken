@@ -3,6 +3,7 @@ package httputil
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,45 +12,57 @@ import (
 )
 
 func TestAddHeaders(t *testing.T) {
+	rw := httptest.NewRecorder()
 
-	w := httptest.NewRecorder()
-	AddHeaders(w, http.Header{"foo": []string{"a", "b"}})
-	assert.Equal(t, w.Header().Get("foo"), "a")
-	assert.Equal(t, w.Header().Get("fOO"), "a")
-	assert.Equal(t, w.Header().Get("a"), "")
-	assert.Equal(t, w.Header().Values("foo"), []string{"a", "b"})
+	AddHeaders(rw, http.Header{"foo": []string{"a", "b"}})
+
+	result := rw.Result()
+	h := result.Header
+
+	assert.Equal(t, "a", h.Get("foo"))
+	assert.Equal(t, "a", h.Get("fOO"))
+	assert.Equal(t, "", h.Get("a"))
+	assert.Equal(t, []string{"a", "b"}, h.Values("foo"))
 }
 
 func TestHTMLWrite(t *testing.T) {
-	w := httptest.NewRecorder()
+	rw := httptest.NewRecorder()
 	r := httptest.NewRequest("FOO", "/BAR", nil)
 
-	HTMLWrite(w, r, http.StatusTeapot, http.StatusText(http.StatusTeapot))
+	HTMLWrite(rw, r, http.StatusTeapot, http.StatusText(http.StatusTeapot))
 
-	assert.Equal(t, w.Header().Get(ContentType), TextHTML)
-	assert.Equal(t, w.Code, http.StatusTeapot)
-	assert.Equal(t, w.Body.String(), http.StatusText(http.StatusTeapot))
+	result := rw.Result()
+	b, _ := io.ReadAll(result.Body)
+
+	assert.Equal(t, TextHTML, result.Header.Get(ContentType))
+	assert.Equal(t, http.StatusTeapot, result.StatusCode)
+	assert.Equal(t, http.StatusText(http.StatusTeapot), string(b))
 }
 
 func TestJSONWrite(t *testing.T) {
-	w := httptest.NewRecorder()
+	rw := httptest.NewRecorder()
 	r := httptest.NewRequest("FOO", "/BAR", nil)
 
-	JSONWrite(w, r, http.StatusTeapot, http.StatusText(http.StatusTeapot))
+	JSONWrite(rw, r, http.StatusTeapot, http.StatusText(http.StatusTeapot))
 
-	assert.Equal(t, w.Header().Get(ContentType), ApplicationJSON)
-	assert.Equal(t, w.Code, http.StatusTeapot)
-	assert.Equal(t, w.Body.String(), fmt.Sprintf("%q", http.StatusText(http.StatusTeapot)))
+	result := rw.Result()
+	b, _ := io.ReadAll(result.Body)
+
+	assert.Equal(t, ApplicationJSON, result.Header.Get(ContentType))
+	assert.Equal(t, http.StatusTeapot, result.StatusCode)
+	assert.Equal(t, fmt.Sprintf("%q", http.StatusText(http.StatusTeapot)), string(b))
 
 	// Fail
-	w = httptest.NewRecorder()
+	rw = httptest.NewRecorder()
 
-	JSONWrite(w, r, 412, badJson{})
+	JSONWrite(rw, r, 412, badJson{})
 
-	assert.Equal(t, w.Header().Get(ContentType), ApplicationJSON)
-	assert.Equal(t, w.Code, 500)
-	assert.Equal(t, w.Body.String(), `Internal Server Error
-`)
+	result = rw.Result()
+	b, _ = io.ReadAll(result.Body)
+
+	assert.Equal(t, TextPlain, result.Header.Get(ContentType))
+	assert.Equal(t, http.StatusInternalServerError, result.StatusCode)
+	assert.Equal(t, fmt.Sprintf("%s\n", http.StatusText(http.StatusInternalServerError)), string(b))
 
 }
 
