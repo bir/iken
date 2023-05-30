@@ -7,4 +7,6 @@ var (
 	ApplicationJSON = "application/json"
 	// TextHTML content-type.
 	TextHTML = "text/html"
+	// TextPlain content-type.
+	TextPlain = "text/plain; charset=utf-8"
 )
