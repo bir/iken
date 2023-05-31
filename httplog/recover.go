@@ -35,7 +35,7 @@ func RecoverLogger(log zerolog.Logger) func(http.Handler) http.Handler {
 					}
 					s := string(debug.Stack())
 
-					zerolog.Ctx(ctx).Err(err).Strs(Stack, simplifyStack(s, stackSkip)).Msg("Panic")
+					zerolog.Ctx(ctx).Err(err).Strs(httputil.LogStack, simplifyStack(s, stackSkip)).Msg("Panic")
 
 					httputil.HTTPInternalServerError(w, r)
 				}

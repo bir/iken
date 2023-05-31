@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -21,13 +20,13 @@ func (mm Messages) Error() string {
 type Errors map[string]Messages //nolint: errname
 
 // Error returns the error string of Errors.
-func (ee Errors) Error() string {
-	if len(ee) == 0 {
+func (ee *Errors) Error() string {
+	if len(*ee) == 0 {
 		return ""
 	}
 
 	return strutil.Join(ee.Keys(), "", "; ", ".", func(key string) string {
-		return fmt.Sprintf("%v: %v", key, ee[key].Error())
+		return fmt.Sprintf("%v: %v", key, (*ee)[key].Error())
 	})
 }
 
@@ -59,11 +58,11 @@ func (ee *Errors) GetErr() error {
 	return ee
 }
 
-func (ee Errors) Keys() []string {
-	keys := make([]string, len(ee))
+func (ee *Errors) Keys() []string {
+	keys := make([]string, len(*ee))
 	i := 0
 
-	for key := range ee {
+	for key := range *ee {
 		keys[i] = key
 		i++
 	}
@@ -73,16 +72,16 @@ func (ee Errors) Keys() []string {
 	return keys
 }
 
-func (ee *Errors) MarshalJSON() ([]byte, error) {
+func (ee *Errors) Fields() map[string][]string {
 	out := make(map[string][]string)
 
 	for k, errs := range *ee {
 		for _, e := range errs {
-			out[k] = append(out[k], e.Error())
+			out[k] = append(out[k], getError(e))
 		}
 	}
 
-	return json.Marshal(out) //nolint: wrapcheck
+	return out
 }
 
 // New returns a single validation error for the field with msg.
@@ -93,6 +92,20 @@ func New(field string, msg string) error {
 // NewError returns a single validation error for the field with the embedded error.
 func NewError(field string, msg error) error {
 	return (&Errors{}).Add(field, msg)
+}
+
+type UserError interface {
+	error
+	UserError() string
+}
+
+func getError(err error) string {
+	var u UserError
+	if errors.As(err, &u) {
+		return u.UserError()
+	}
+
+	return err.Error()
 }
 
 func Join(elems []error, sep string) string {
