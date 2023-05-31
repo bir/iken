@@ -31,7 +31,8 @@ func (ee *Errors) Error() string {
 }
 
 // Add appends the field and msg to the current list of errors.  Add will initialize the Errors
-// object if it is not initialized.
+// object if it is not initialized.  If msg is `error` it is added directly, otherwise the value
+// is converted to a string and added.
 func (ee *Errors) Add(field string, msg any) *Errors {
 	if *ee == nil {
 		*ee = Errors{}
@@ -39,7 +40,7 @@ func (ee *Errors) Add(field string, msg any) *Errors {
 
 	err, ok := msg.(error)
 	if !ok {
-		err = fmt.Errorf("%s", msg)
+		err = fmt.Errorf("%s", msg) //nolint
 	}
 
 	fE, ok := (*ee)[field]
@@ -90,12 +91,7 @@ func (ee *Errors) Fields() map[string][]string {
 }
 
 // New returns a single validation error for the field with msg.
-func New(field string, msg string) error {
-	return (&Errors{}).Add(field, errors.New(msg)) //nolint: goerr113
-}
-
-// NewError returns a single validation error for the field with the embedded error.
-func NewError(field string, msg error) error {
+func New(field string, msg any) error {
 	return (&Errors{}).Add(field, msg)
 }
 

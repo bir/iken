@@ -69,12 +69,6 @@ func TestErrors_New(t *testing.T) {
 	assert.Equal(t, "a: b.", err.Error())
 }
 
-func TestErrors_NewError(t *testing.T) {
-	err := validation.NewError("a", errors.New("b"))
-	assert.NotEmpty(t, err)
-	assert.Equal(t, "a: b.", err.Error())
-}
-
 func TestJoin(t *testing.T) {
 	s := validation.Join(nil, "|")
 	assert.Empty(t, s)
