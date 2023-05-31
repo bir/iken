@@ -22,6 +22,7 @@ func TestErrors_Add(t *testing.T) {
 		{"empty", nil, "", "", "", `{}`},
 		{"empty add", nil, "test", "bad", "test: bad.", `{"test":["bad"]}`},
 		{"add new", *(&validation.Errors{}).Add("a", errors.New("b")), "test", "bad", "a: b; test: bad.", `{"a":["b"],"test":["bad"]}`},
+		{"add new string", *(&validation.Errors{}).Add("a", "b"), "test", "bad", "a: b; test: bad.", `{"a":["b"],"test":["bad"]}`},
 		{"add existing", *(&validation.Errors{}).Add("a", errors.New("b")), "a", "x", "a: b, x.", `{"a":["b","x"]}`},
 		{"add User",
 			*(&validation.Errors{}).Add("a",

@@ -32,16 +32,21 @@ func (ee *Errors) Error() string {
 
 // Add appends the field and msg to the current list of errors.  Add will initialize the Errors
 // object if it is not initialized.
-func (ee *Errors) Add(field string, msg error) *Errors {
+func (ee *Errors) Add(field string, msg any) *Errors {
 	if *ee == nil {
 		*ee = Errors{}
 	}
 
+	err, ok := msg.(error)
+	if !ok {
+		err = fmt.Errorf("%s", msg)
+	}
+
 	fE, ok := (*ee)[field]
 	if !ok || len(fE) == 0 {
-		fE = Messages{msg}
+		fE = Messages{err}
 	} else {
-		fE = append(fE, msg)
+		fE = append(fE, err)
 	}
 
 	(*ee)[field] = fE
