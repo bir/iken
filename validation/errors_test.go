@@ -23,6 +23,13 @@ func TestErrors_Add(t *testing.T) {
 		{"empty add", nil, "test", "bad", "test: bad.", `{"test":["bad"]}`},
 		{"add new", *(&validation.Errors{}).Add("a", errors.New("b")), "test", "bad", "a: b; test: bad.", `{"a":["b"],"test":["bad"]}`},
 		{"add existing", *(&validation.Errors{}).Add("a", errors.New("b")), "a", "x", "a: b, x.", `{"a":["b","x"]}`},
+		{"add User",
+			*(&validation.Errors{}).Add("a",
+				validation.Error{Message: "PUBLIC", Source: errors.New("PRIVATE")}),
+			"a",
+			"x",
+			"a: PUBLIC: PRIVATE, x.",
+			`{"a":["PUBLIC","x"]}`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -32,7 +39,7 @@ func TestErrors_Add(t *testing.T) {
 			}
 			assert.Equal(t, tt.want, got.Error())
 
-			b, err := json.Marshal(got)
+			b, err := json.Marshal(got.Fields())
 			assert.Nil(t, err)
 
 			assert.Equal(t, tt.wantJson, string(b))

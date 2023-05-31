@@ -27,7 +27,6 @@ const (
 	Response            = "response.body"
 	TraceID             = "trace_id"
 	UserID              = "usr.id"
-	Stack               = "error.stack"
 )
 
 // MaxRequestBodyLog controls the maximum request body that can be logged.  Anything greater will be truncated.

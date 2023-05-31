@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/bir/iken/errs"
 	"github.com/bir/iken/logctx"
 	"github.com/bir/iken/validation"
 )
@@ -17,6 +18,12 @@ type ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 
 // StatusContextCancelled - reported when the context is cancelled.  Most likely caused by lost connections.
 const StatusContextCancelled = 499
+
+type ClientValidationError struct {
+	Code    int                 `json:"code,omitempty"`
+	Message string              `json:"message"`
+	Fields  map[string][]string `json:"fields,omitempty"`
+}
 
 // ErrorHandler provides some standard handling for errors in an http request
 // flow.
@@ -37,27 +44,43 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 
-	logctx.AddToContext(r.Context(), LogErrorMessage, err)
+	logctx.AddStrToContext(r.Context(), LogErrorMessage, err.Error())
+
+	if stack := errs.MarshalStack(err); stack != nil {
+		logctx.AddToContext(r.Context(), LogStack, stack)
+	}
 
 	var (
-		jsonErr       *json.SyntaxError
-		validationErr *validation.Errors
+		jsonErr        *json.SyntaxError
+		validationErrs *validation.Errors
+		validationErr  validation.Error
 	)
 
 	switch {
 	case errors.Is(err, context.Canceled):
-		http.Error(w, err.Error(), StatusContextCancelled)
+		http.Error(w, "canceled", StatusContextCancelled)
+
 	case errors.Is(err, ErrForbidden):
-		http.Error(w, err.Error(), http.StatusForbidden)
+		HTTPError(w, http.StatusForbidden)
+
 	case errors.Is(err, ErrBasicAuthenticate):
 		w.Header().Set("WWW-Authenticate", "Basic realm=Restricted")
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		HTTPError(w, http.StatusUnauthorized)
+
 	case errors.Is(err, ErrUnauthorized):
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		HTTPError(w, http.StatusUnauthorized)
+
 	case errors.As(err, &jsonErr):
 		JSONWrite(w, r, http.StatusBadRequest, fmt.Sprintf("%s at offset %d", jsonErr.Error(), jsonErr.Offset))
+
+	case errors.As(err, &validationErrs):
+		JSONWrite(w, r, http.StatusBadRequest,
+			ClientValidationError{http.StatusBadRequest, "validation errors", validationErrs.Fields()})
+
 	case errors.As(err, &validationErr):
-		JSONWrite(w, r, http.StatusBadRequest, validationErr)
+		JSONWrite(w, r, http.StatusBadRequest,
+			ClientValidationError{http.StatusBadRequest, validationErr.UserError(), nil})
+
 	default:
 		HTTPInternalServerError(w, r)
 	}
@@ -66,6 +89,8 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 const (
 	// LogErrorMessage is used to report internal errors to the logging service.
 	LogErrorMessage = "error.message"
+	// LogStack is used to report available error stacks to logging.
+	LogStack = "error.stack"
 
 	RequestIDHeader = "X-Request-Id"
 
@@ -79,6 +104,10 @@ func HTTPInternalServerError(w http.ResponseWriter, r *http.Request) {
 	if reqID != "" {
 		http.Error(w, fmt.Sprintf(InternalErrorFormat, reqID), http.StatusInternalServerError)
 	} else {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		HTTPError(w, http.StatusInternalServerError)
 	}
+}
+
+func HTTPError(w http.ResponseWriter, code int) {
+	http.Error(w, http.StatusText(code), code)
 }
