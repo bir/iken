@@ -2,7 +2,6 @@ package httputil
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -51,7 +50,6 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	}
 
 	var (
-		jsonErr        *json.SyntaxError
 		validationErrs *validation.Errors
 		validationErr  validation.Error
 	)
@@ -69,9 +67,6 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 
 	case errors.Is(err, ErrUnauthorized):
 		HTTPError(w, http.StatusUnauthorized)
-
-	case errors.As(err, &jsonErr):
-		JSONWrite(w, r, http.StatusBadRequest, fmt.Sprintf("%s at offset %d", jsonErr.Error(), jsonErr.Offset))
 
 	case errors.As(err, &validationErrs):
 		JSONWrite(w, r, http.StatusBadRequest,
