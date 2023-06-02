@@ -65,6 +65,60 @@ func TestGetInt(t *testing.T) {
 	}
 }
 
+func TestGetInt64(t *testing.T) {
+	tests := []struct {
+		name     string
+		r        *http.Request
+		param    string
+		required bool
+		want     int64
+		wantErr  bool
+		wantOk   bool
+	}{
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", true, 123, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, 0, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, 0, false, false},
+		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, 0, true, false},
+		{"max", httptest.NewRequest("GET", "/BAR?foo=9223372036854775807", nil), "foo", true, 9223372036854775807, false, true},
+		{"over max", httptest.NewRequest("GET", "/BAR?foo=19223372036854775807", nil), "foo", true, 0, true, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok, err := GetInt64(tt.r, tt.param, tt.required)
+
+			assert.Equal(t, tt.wantErr, err != nil, "error")
+			assert.Equal(t, tt.want, got, "value")
+			assert.Equal(t, tt.wantOk, ok, "ok")
+		})
+	}
+}
+
+func TestGetBool(t *testing.T) {
+	tests := []struct {
+		name     string
+		r        *http.Request
+		param    string
+		required bool
+		want     bool
+		wantErr  bool
+		wantOk   bool
+	}{
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=true", nil), "foo", true, true, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, false, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, false, false, false},
+		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, false, true, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok, err := GetBool(tt.r, tt.param, tt.required)
+
+			assert.Equal(t, tt.wantErr, err != nil, "error")
+			assert.Equal(t, tt.want, got, "value")
+			assert.Equal(t, tt.wantOk, ok, "ok")
+		})
+	}
+}
+
 func TestGetInt32Array(t *testing.T) {
 	tests := []struct {
 		name     string

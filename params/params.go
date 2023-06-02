@@ -40,6 +40,34 @@ func GetInt32(r *http.Request, name string, required bool) (int32, bool, error) 
 	return int32(i), true, nil
 }
 
+func GetInt64(r *http.Request, name string, required bool) (int64, bool, error) {
+	s, ok, err := GetString(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return 0, false, err
+	}
+
+	i, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0, false, fmt.Errorf("invalid int32: %w", err)
+	}
+
+	return i, true, nil
+}
+
+func GetBool(r *http.Request, name string, required bool) (bool, bool, error) {
+	s, ok, err := GetString(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return false, false, err
+	}
+
+	b, err := strconv.ParseBool(s)
+	if err != nil {
+		return false, false, fmt.Errorf("invalid bool: %w", err)
+	}
+
+	return b, true, nil
+}
+
 func GetInt(r *http.Request, name string, required bool) (int, bool, error) {
 	s, ok, err := GetString(r, name, required)
 	if err != nil || len(s) == 0 || !ok {
