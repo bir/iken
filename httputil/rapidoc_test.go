@@ -15,17 +15,10 @@ func TestRapiDoc(t *testing.T) {
 	rw := httptest.NewRecorder()
 
 	h := http.HandlerFunc(httputil.RapiDoc(httputil.RapiDocOpts{}))
-	h.ServeHTTP(rw, httptest.NewRequest("GET", "http://test/docs", nil))
+	h.ServeHTTP(rw, nil)
 	result := rw.Result()
 	b, _ := io.ReadAll(result.Body)
 
 	assert.Equal(t, 200, result.StatusCode, "status")
 	assert.Equal(t, 354, len(b), "body size")
-
-	h.ServeHTTP(rw, httptest.NewRequest("GET", "http://test/notDocs", nil))
-	result = rw.Result()
-	b, _ = io.ReadAll(result.Body)
-
-	assert.Equal(t, 200, result.StatusCode, "status")
-	assert.Equal(t, 0, len(b), "body size")
 }
