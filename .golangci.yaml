@@ -24,6 +24,7 @@ linters:
     - nosnakecase
     - exhaustruct
     - gocognit
+    - depguard
 linters-settings:
   cyclop:
     max-complexity: 18

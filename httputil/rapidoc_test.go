@@ -14,9 +14,7 @@ import (
 func TestRapiDoc(t *testing.T) {
 	rw := httptest.NewRecorder()
 
-	next := func(rw http.ResponseWriter, r *http.Request) {}
-
-	h := httputil.RapiDoc(httputil.RapiDocOpts{})(http.HandlerFunc(next))
+	h := http.HandlerFunc(httputil.RapiDoc(httputil.RapiDocOpts{}))
 	h.ServeHTTP(rw, httptest.NewRequest("GET", "http://test/docs", nil))
 	result := rw.Result()
 	b, _ := io.ReadAll(result.Body)

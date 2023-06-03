@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"html/template"
 	"net/http"
-	"path"
 )
 
 // RapiDocOpts configures the RapiDoc middlewares.
@@ -44,34 +43,21 @@ func (r *RapiDocOpts) Defaults() {
 	}
 }
 
-// RapiDoc creates a middleware to serve a documentation site for a swagger spec.
+// RapiDoc creates a handler to serve a documentation site for a swagger spec.
 // This allows for altering the spec before starting the http listener.
-//
-
-func RapiDoc(opts RapiDocOpts) func(http.Handler) http.Handler {
+func RapiDoc(opts RapiDocOpts) func(w http.ResponseWriter, r *http.Request) {
 	opts.Defaults()
 
-	pth := path.Join(opts.BasePath, opts.Path)
 	tmpl := template.Must(template.New("rapidoc").Parse(rapidocTemplate))
 
 	buf := bytes.NewBuffer(nil)
 	_ = tmpl.Execute(buf, opts)
 	b := buf.Bytes()
 
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == pth {
-				rw.Header().Set("Content-Type", "text/html; charset=utf-8")
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-				_, _ = rw.Write(b)
-
-				return
-			}
-
-			if next != nil {
-				next.ServeHTTP(rw, r)
-			}
-		})
+		_, _ = w.Write(b)
 	}
 }
 
