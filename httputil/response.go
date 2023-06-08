@@ -11,6 +11,8 @@ func JSONWrite(w http.ResponseWriter, r *http.Request, code int, obj interface{}
 	b, err := json.Marshal(obj)
 	if err != nil {
 		ErrorHandler(w, r, fmt.Errorf("JSONWrite:%w", err))
+
+		return
 	}
 
 	Write(w, r, ApplicationJSON, code, b)
