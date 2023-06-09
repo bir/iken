@@ -49,6 +49,7 @@ func LogRecoverError(ctx context.Context, stackSkip int, recoverErr any) {
 	default:
 		err = ErrInternal
 	}
+
 	s := string(debug.Stack())
 
 	zerolog.Ctx(ctx).Err(err).Strs(httputil.LogStack, SimplifyStack(s, stackSkip+1)).Msg("Panic")
