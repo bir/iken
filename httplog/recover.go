@@ -1,6 +1,7 @@
 package httplog
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -20,32 +21,37 @@ func RecoverLogger(log zerolog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := log.With().Logger().WithContext(r.Context())
+			r = r.WithContext(ctx)
 
 			defer func() {
 				rErr := recover()
 				if rErr != nil {
-					var err error
-					switch t := rErr.(type) {
-					case string:
-						err = fmt.Errorf("%v: %w", t, ErrInternal)
-					case error:
-						err = t
-					default:
-						err = ErrInternal
-					}
-					s := string(debug.Stack())
-
-					zerolog.Ctx(ctx).Err(err).Strs(httputil.LogStack, simplifyStack(s, stackSkip)).Msg("Panic")
+					LogRecoverError(ctx, stackSkip, rErr)
 
 					httputil.HTTPInternalServerError(w, r)
 				}
 			}()
 
 			if next != nil {
-				next.ServeHTTP(w, r.WithContext(ctx))
+				next.ServeHTTP(w, r)
 			}
 		})
 	}
+}
+
+func LogRecoverError(ctx context.Context, stackSkip int, recoverErr any) {
+	var err error
+	switch t := recoverErr.(type) {
+	case string:
+		err = fmt.Errorf("%v: %w", t, ErrInternal)
+	case error:
+		err = t
+	default:
+		err = ErrInternal
+	}
+	s := string(debug.Stack())
+
+	zerolog.Ctx(ctx).Err(err).Strs(httputil.LogStack, SimplifyStack(s, stackSkip+1)).Msg("Panic")
 }
 
 var RecoverBasePath = initBasePath()
@@ -96,7 +102,7 @@ func simpleLine(line, funcName string) string {
 	return line + " (" + funcName + ")"
 }
 
-func simplifyStack(stack string, skip int) []string {
+func SimplifyStack(stack string, skip int) []string {
 	lines := strings.Split(stack, "\n")
 	//	First line is goroutine ID (e.g. "goroutine 83 [running]:") - those are purged
 	// The rest are pairs of lines like:
