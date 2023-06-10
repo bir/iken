@@ -233,3 +233,30 @@ func TestGetEnum(t *testing.T) {
 		})
 	}
 }
+
+func TestGetEnumArray(t *testing.T) {
+	tests := []struct {
+		name     string
+		r        *http.Request
+		param    string
+		required bool
+		want     []TestEnum
+		wantErr  bool
+		wantOk   bool
+	}{
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=bbb", nil), "foo", true, []TestEnum{testEnumB}, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, nil, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, nil, false, false},
+		{"bad value", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, []TestEnum{testEnumUnknown}, false, true},
+		{"all", httptest.NewRequest("GET", "/BAR?foo=aaa,bbb,ccc", nil), "foo", true, []TestEnum{testEnumA, testEnumB, testEnumC}, false, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok, err := GetEnumArray(tt.r, tt.param, tt.required, NewTestEnum)
+
+			assert.Equal(t, tt.wantErr, err != nil, "error")
+			assert.Equal(t, tt.want, got, "value")
+			assert.Equal(t, tt.wantOk, ok, "ok")
+		})
+	}
+}
