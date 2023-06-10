@@ -134,7 +134,6 @@ func GetEnum[T comparable](r *http.Request, name string, required bool, parser f
 	}
 
 	return parser(s), true, nil
-
 }
 
 func GetEnumArray[T comparable](r *http.Request, name string, required bool, parser func(string) T) ([]T, bool, error) {
