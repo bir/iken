@@ -58,6 +58,9 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, context.Canceled):
 		http.Error(w, "canceled", StatusContextCancelled)
 
+	case errors.Is(err, ErrNotFound):
+		HTTPError(w, http.StatusNotFound)
+
 	case errors.Is(err, ErrForbidden):
 		HTTPError(w, http.StatusForbidden)
 
