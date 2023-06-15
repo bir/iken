@@ -2,6 +2,7 @@ package logctx_test
 
 import (
 	"bytes"
+	"context"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -12,8 +13,20 @@ import (
 
 func TestLogContext(t *testing.T) {
 	original := bytes.NewBuffer(nil)
-	ctx := logctx.NewSubLoggerContext(zerolog.New(original))
+
+	//used to verify sub-logger creation doesn't throw away the whole context
+	id := "42"
+	ctx := logctx.SetID(context.Background(), id)
+	assert.Equal(t, id, logctx.GetID(ctx))
+
+	ctx = logctx.NewSubLoggerContext(ctx, zerolog.New(original))
+
+	assert.Equal(t, id, logctx.GetID(ctx), "")
+
 	ctx2 := logctx.NewContextFrom(ctx)
+
+	assert.Equal(t, id, logctx.GetID(ctx2))
+
 	logctx.AddToContext(ctx, "key", 1)
 	logctx.AddMapToContext(ctx, map[string]interface{}{"test": "value", "test2": "value2"})
 

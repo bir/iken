@@ -4,19 +4,18 @@ import (
 	"context"
 
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
-// NewContextFrom clones the current context.  Used to branch execution (go routines).
+// NewContextFrom returns a child context with a sub-logger attached.
+// If no logger is associated with the given ctx as the parent logger,
+// DefaultContextLogger is used if not nil, otherwise a disabled logger is used.
 func NewContextFrom(ctx context.Context) context.Context {
-	return NewSubLoggerContext(*log.Ctx(ctx))
+	return NewSubLoggerContext(ctx, *zerolog.Ctx(ctx))
 }
 
-// NewSubLoggerContext creates a new logger with an empty context.
-func NewSubLoggerContext(log zerolog.Logger) context.Context {
-	l := log.With().Logger()
-
-	return l.WithContext(context.Background())
+// NewSubLoggerContext returns a child context with a sub-logger attached.
+func NewSubLoggerContext(ctx context.Context, log zerolog.Logger) context.Context {
+	return log.With().Logger().WithContext(ctx)
 }
 
 // AddStrToContext adds the key/value to the log context.
