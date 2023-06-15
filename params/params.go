@@ -124,3 +124,29 @@ func GetInt32Array(r *http.Request, name string, required bool) ([]int32, bool, 
 
 	return out, true, nil
 }
+
+func GetEnum[T comparable](r *http.Request, name string, required bool, parser func(string) T) (T, bool, error) {
+	var out T
+
+	s, ok, err := GetString(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return out, false, err
+	}
+
+	return parser(s), true, nil
+}
+
+func GetEnumArray[T comparable](r *http.Request, name string, required bool, parser func(string) T) ([]T, bool, error) {
+	pp, ok, err := GetStringArray(r, name, required)
+	if err != nil || len(pp) == 0 || !ok {
+		return nil, false, err
+	}
+
+	out := make([]T, len(pp))
+
+	for i, p := range pp {
+		out[i] = parser(p)
+	}
+
+	return out, true, nil
+}

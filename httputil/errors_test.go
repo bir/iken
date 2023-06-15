@@ -38,6 +38,7 @@ func TestErrorHandler(t *testing.T) {
 		logMessage string
 	}{
 		{"nil error", context.Background(), nil, "", 200, "", ""},
+		{"not found error", context.Background(), errs.WithStack(httputil.ErrNotFound, 0), "", 404, "Not Found\n", "not found"},
 		{"unknown error", context.Background(), errs.WithStack("unknown error", 0), "", 500, "Internal Server Error\n", "unknown error"},
 		{"unknown error w/request ID", context.Background(), errs.WithStack("unknown error", 0), "FOO", 500, "Internal Server Error: Request \"FOO\"\n", "unknown error"},
 		{"validation errors", context.Background(), validation.New("name", "bad"), "", 400, `{"code":400,"message":"validation errors","fields":{"name":["bad"]}}`, "name: bad."},
