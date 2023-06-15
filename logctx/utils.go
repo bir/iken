@@ -8,7 +8,9 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// NewContextFrom clones the current context.  Used to branch execution (go routines).
+// NewContextFrom returns a child context without cancel and a sub-logger attached.
+// If no logger is associated with the given ctx as the parent logger DefaultContextLogger is used if not nil,
+// otherwise a disabled logger is used.
 func NewContextFrom(ctx context.Context) context.Context {
 	return NewSubLoggerContext(ctx, *zerolog.Ctx(ctx))
 }
