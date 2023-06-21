@@ -1,6 +1,7 @@
 package httputil
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -35,6 +36,20 @@ func TestHTMLWrite(t *testing.T) {
 	b, _ := io.ReadAll(result.Body)
 
 	assert.Equal(t, TextHTML, result.Header.Get(ContentType))
+	assert.Equal(t, http.StatusTeapot, result.StatusCode)
+	assert.Equal(t, http.StatusText(http.StatusTeapot), string(b))
+}
+
+func TestReaderWrite(t *testing.T) {
+	rw := httptest.NewRecorder()
+	r := httptest.NewRequest("FOO", "/BAR", nil)
+
+	ReaderWrite(rw, r, TextPlain, http.StatusTeapot, bytes.NewReader([]byte(http.StatusText(http.StatusTeapot))))
+
+	result := rw.Result()
+	b, _ := io.ReadAll(result.Body)
+
+	assert.Equal(t, TextPlain, result.Header.Get(ContentType))
 	assert.Equal(t, http.StatusTeapot, result.StatusCode)
 	assert.Equal(t, http.StatusText(http.StatusTeapot), string(b))
 }
