@@ -54,6 +54,49 @@ func TestReaderWrite(t *testing.T) {
 	assert.Equal(t, http.StatusText(http.StatusTeapot), string(b))
 }
 
+func TestReaderWriteError(t *testing.T) {
+	rw := httptest.NewRecorder()
+	r := httptest.NewRequest("FOO", "/BAR", nil)
+
+	ReaderWrite(rw, r, TextPlain, http.StatusTeapot, errReader{})
+
+	result := rw.Result()
+	b, _ := io.ReadAll(result.Body)
+
+	assert.Equal(t, TextPlain, result.Header.Get(ContentType))
+	assert.Equal(t, http.StatusTeapot, result.StatusCode)
+	assert.Equal(t, http.StatusText(http.StatusInternalServerError)+"\n", string(b))
+}
+
+type errorResponseWriter struct {
+	*httptest.ResponseRecorder
+}
+
+var errorBody = []byte("error me")
+
+func (e *errorResponseWriter) Write(b []byte) (int, error) {
+	if bytes.Equal(b, errorBody) {
+		// Return an error when Write is called
+		return 0, errors.New("mock error")
+	}
+
+	return e.ResponseRecorder.Write(b)
+}
+
+func TestWriteError(t *testing.T) {
+	rw := httptest.NewRecorder()
+	r := httptest.NewRequest("FOO", "/BAR", nil)
+
+	Write(&errorResponseWriter{ResponseRecorder: rw}, r, TextPlain, http.StatusTeapot, errorBody)
+
+	result := rw.Result()
+	b, _ := io.ReadAll(result.Body)
+
+	assert.Equal(t, TextPlain, result.Header.Get(ContentType))
+	assert.Equal(t, http.StatusTeapot, result.StatusCode)
+	assert.Equal(t, http.StatusText(http.StatusInternalServerError)+"\n", string(b))
+}
+
 func TestJSONWrite(t *testing.T) {
 	rw := httptest.NewRecorder()
 	r := httptest.NewRequest("FOO", "/BAR", nil)
