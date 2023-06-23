@@ -31,6 +31,10 @@ func TestError_Error(t *testing.T) {
 			}
 			assert.Equalf(t, tt.want, e.Error(), "Error()")
 			assert.Equalf(t, tt.wantUser, e.UserError(), "Error()")
+
+			if tt.Source != nil {
+				assert.ErrorIsf(t, e, tt.Source, "Error()")
+			}
 		})
 	}
 }

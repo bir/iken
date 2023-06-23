@@ -16,6 +16,10 @@ func (mm Messages) Error() string {
 	return Join(mm, ", ")
 }
 
+func (mm Messages) Unwrap() []error {
+	return mm
+}
+
 // Errors maps fields to the list of validation failures.
 type Errors map[string]Messages //nolint: errname
 
@@ -28,6 +32,19 @@ func (ee *Errors) Error() string {
 	return strutil.Join(ee.Keys(), "", "; ", ".", func(key string) string {
 		return fmt.Sprintf("%v: %v", key, (*ee)[key].Error())
 	})
+}
+
+func (ee *Errors) Unwrap() []error {
+	if *ee == nil {
+		return nil
+	}
+
+	errs := make([]error, 0, len(*ee))
+	for _, val := range *ee {
+		errs = append(errs, val)
+	}
+
+	return errs
 }
 
 // Add appends the field and msg to the current list of errors.  Add will initialize the Errors
