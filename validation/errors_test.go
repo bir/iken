@@ -53,14 +53,28 @@ func TestErrors_Error(t *testing.T) {
 	assert.Empty(t, ee.Error())
 }
 
+func TestErrors_Unwrap(t *testing.T) {
+	var ee validation.Errors
+	assert.Nil(t, ee.Unwrap())
+
+	errB := errors.New("b")
+
+	_ = ee.Add("a", errB)
+
+	assert.NotNil(t, ee.Unwrap())
+}
+
 func TestErrors_GetErr(t *testing.T) {
 	var ee validation.Errors
 	assert.Nil(t, ee.GetErr())
 
-	_ = ee.Add("a", errors.New("b"))
+	errB := errors.New("b")
+
+	_ = ee.Add("a", errB)
 
 	assert.NotNil(t, ee.GetErr())
 	assert.Equal(t, "a: b.", ee.GetErr().Error())
+	assert.ErrorIs(t, ee.GetErr(), errB)
 }
 
 func TestErrors_New(t *testing.T) {

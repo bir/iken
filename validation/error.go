@@ -21,6 +21,10 @@ func (e Error) Error() string {
 	return fmt.Sprintf("%s: %s", e.Message, e.Source)
 }
 
+func (e Error) Unwrap() error {
+	return e.Source
+}
+
 func (e Error) UserError() string {
 	if e.Message != "" {
 		return e.Message
