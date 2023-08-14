@@ -29,7 +29,7 @@ type InvalidConfig struct {
 	BadTag string `env:","`
 }
 
-func ErrResolver(_ string) (interface{}, error) {
+func ErrResolver(_ string) (any, error) {
 	return nil, errors.New("BAD")
 }
 
@@ -45,7 +45,7 @@ func TestSetup(t *testing.T) {
 	tests := []struct {
 		name    string
 		pre     func()
-		cfg     interface{}
+		cfg     any
 		env     map[string]string
 		json    string
 		wantErr bool
@@ -106,7 +106,7 @@ func TestComplex(t *testing.T) {
 	tests := []struct {
 		name    string
 		pre     func()
-		cfg     interface{}
+		cfg     any
 		env     map[string]string
 		json    string
 		wantErr bool

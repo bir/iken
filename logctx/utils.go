@@ -28,14 +28,14 @@ func AddStrToContext(ctx context.Context, key, value string) {
 }
 
 // AddToContext adds the key/value to the log context.
-func AddToContext(ctx context.Context, key string, value interface{}) {
+func AddToContext(ctx context.Context, key string, value any) {
 	zerolog.Ctx(ctx).UpdateContext(func(c zerolog.Context) zerolog.Context {
 		return c.Interface(key, value)
 	})
 }
 
 // AddMapToContext adds the map of key/values to the log context.
-func AddMapToContext(ctx context.Context, fields map[string]interface{}) {
+func AddMapToContext(ctx context.Context, fields map[string]any) {
 	zerolog.Ctx(ctx).UpdateContext(func(c zerolog.Context) zerolog.Context {
 		return c.Fields(fields)
 	})

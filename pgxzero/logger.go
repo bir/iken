@@ -58,7 +58,7 @@ func (l *Logger) Log(ctx context.Context, level tracelog.LogLevel, msg string, d
 		requestID := logctx.GetID(ctx)
 		if requestID != "" {
 			if data == nil {
-				data = make(map[string]interface{})
+				data = make(map[string]any)
 			}
 
 			data[httplog.RequestID] = requestID

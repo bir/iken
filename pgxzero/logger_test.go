@@ -14,8 +14,8 @@ import (
 
 func TestLogger_Log(t *testing.T) {
 
-	dataWithRequest := map[string]interface{}{"request_id": 123}
-	dataWithoutRequest := map[string]interface{}{"other": 123}
+	dataWithRequest := map[string]any{"request_id": 123}
+	dataWithoutRequest := map[string]any{"other": 123}
 
 	ctx := logctx.SetID(context.Background(), "121")
 	tests := []struct {
@@ -23,7 +23,7 @@ func TestLogger_Log(t *testing.T) {
 		ctx   context.Context
 		level tracelog.LogLevel
 		msg   string
-		data  map[string]interface{}
+		data  map[string]any
 		want  string
 	}{
 		{"no level", nil, 0, "no level", nil, "{\"level\":\"debug\",\"module\":\"tracelog\",\"message\":\"no level\"}\n"},

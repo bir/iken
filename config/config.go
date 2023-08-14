@@ -29,7 +29,7 @@ var (
 
 // Resolver is used to map a key to a value.  Examples are custom serialization used for Postgres Connection URL
 // composition, see PgDBResolver for example.
-type Resolver func(key string) (interface{}, error)
+type Resolver func(key string) (any, error)
 
 // ResolverMap maintains the map of resolver names to Resolver funcs.
 type ResolverMap = map[string]Resolver
@@ -98,7 +98,7 @@ func parseTag(tag string) error {
 
 // Load uses struct tags (see parseTag) and viper to load the configuration into a config object.  The input
 // object must be a pointer to a struct.  See ExampleLoad for simple example.
-func Load(cfg interface{}) error {
+func Load(cfg any) error {
 	v := reflect.ValueOf(cfg)
 	if v.Kind() != reflect.Ptr || v.IsZero() {
 		return ErrInvalidConfigObject
