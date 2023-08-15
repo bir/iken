@@ -5,12 +5,12 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bir/iken/arrays"
 	"github.com/bir/iken/httputil"
 )
 
@@ -33,7 +33,7 @@ func authenticate(r *http.Request) (string, error) {
 }
 
 func authorize(ctx context.Context, user string, scopes []string) error {
-	if arrays.Contains(user, scopes) {
+	if slices.Contains(scopes, user) {
 		return nil
 	}
 
