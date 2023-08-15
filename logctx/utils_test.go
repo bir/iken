@@ -7,7 +7,6 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/bir/iken/logctx"
 )
@@ -40,17 +39,4 @@ func TestLogContext(t *testing.T) {
 	// ensure Context variables are shared
 	assert.Equal(t, id, logctx.GetID(ctx))
 	assert.Equal(t, id, logctx.GetID(ctx2))
-}
-
-func TestWithoutCancel(t *testing.T) {
-	assert.Panics(t, func() { logctx.WithoutCancel(nil) })
-	ctx := logctx.WithoutCancel(context.Background())
-
-	deadline, ok := ctx.Deadline()
-	assert.False(t, ok)
-	assert.Zero(t, deadline)
-
-	s, ok := ctx.(interface{ String() string })
-	require.True(t, ok)
-	assert.Equal(t, "context.Background.WithoutCancel", s.String())
 }

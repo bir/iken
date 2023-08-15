@@ -2,8 +2,6 @@ package logctx
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -17,7 +15,7 @@ func NewContextFrom(ctx context.Context) context.Context {
 
 // NewSubLoggerContext creates a new logger with an empty context.
 func NewSubLoggerContext(ctx context.Context, log zerolog.Logger) context.Context {
-	return log.With().Logger().WithContext(WithoutCancel(ctx))
+	return log.With().Logger().WithContext(context.WithoutCancel(ctx))
 }
 
 // AddStrToContext adds the key/value to the log context.
@@ -39,39 +37,4 @@ func AddMapToContext(ctx context.Context, fields map[string]any) {
 	zerolog.Ctx(ctx).UpdateContext(func(c zerolog.Context) zerolog.Context {
 		return c.Fields(fields)
 	})
-}
-
-// WithoutCancel is a port from go1.21.  Placeholder until generally available in stdlib.
-func WithoutCancel(parent context.Context) context.Context {
-	if parent == nil {
-		panic("cannot create context from nil parent")
-	}
-
-	return withoutCancelCtx{parent}
-}
-
-//nolint:containedctx
-type withoutCancelCtx struct {
-	ctx context.Context
-}
-
-//nolint:nonamedreturns
-func (withoutCancelCtx) Deadline() (deadline time.Time, ok bool) {
-	return
-}
-
-func (withoutCancelCtx) Done() <-chan struct{} {
-	return nil
-}
-
-func (withoutCancelCtx) Err() error {
-	return nil
-}
-
-func (c withoutCancelCtx) Value(key any) any {
-	return c.ctx.Value(key)
-}
-
-func (c withoutCancelCtx) String() string {
-	return fmt.Sprintf("%s", c.ctx) + ".WithoutCancel"
 }
