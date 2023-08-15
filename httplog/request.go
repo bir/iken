@@ -116,11 +116,11 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 
 			switch {
 			case status >= http.StatusInternalServerError:
-				event = logger.Error()
+				event = logger.Error() //nolint
 			case status >= http.StatusBadRequest:
-				event = logger.Warn()
+				event = logger.Warn() //nolint
 			default:
-				event = logger.Info()
+				event = logger.Info() //nolint
 			}
 
 			event.Msgf("%d %s %s", status, r.Method, r.URL)
