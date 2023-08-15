@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/bir/iken/errs"
 	"github.com/pkg/errors"
+
+	"github.com/bir/iken/errs"
 )
 
 // For testing stacks we only check the function names in the stack, to
-//reduce brittleness of the tests with the version of go
+// reduce brittleness of the tests with the version of go
 var (
 	stackTests = []StackTest{
 		{
@@ -18,7 +19,7 @@ var (
 			[]string{"Callers",
 				"WithStack",
 				"init",
-				"doInit",
+				"doInit1",
 				"doInit",
 				"main",
 				"goexit"},
@@ -28,7 +29,7 @@ var (
 			errs.WithStack(123, -1), "123", false, "",
 			[]string{"WithStack",
 				"init",
-				"doInit",
+				"doInit1",
 				"doInit",
 				"main",
 				"goexit"},
@@ -37,7 +38,7 @@ var (
 			// String
 			errs.WithStack("1", 0), "1", false, "",
 			[]string{"init",
-				"doInit",
+				"doInit1",
 				"doInit",
 				"main",
 				"goexit"},
@@ -50,14 +51,14 @@ var (
 	stopTests = []StackTest{
 		{
 			// String
-			errs.WithStack("1", 0), "1", false, "doInit",
+			errs.WithStack("1", 0), "1", false, "doInit1",
 			[]string{"init",
-				"doInit"},
+				"doInit1"},
 		}, {
 			// String
 			errs.WithStack("1", 0), "1", false, "No match for this stop",
 			[]string{"init",
-				"doInit",
+				"doInit1",
 				"doInit",
 				"main",
 				"goexit"},
@@ -68,7 +69,7 @@ var (
 			// errs
 			errs.WithStack("errs.WithStack", 0), "errs.WithStack", false, "",
 			[]string{"init",
-				"doInit",
+				"doInit1",
 				"doInit",
 				"main",
 				"goexit"},
@@ -76,7 +77,7 @@ var (
 			// pkg.errors - uses a truncated file name
 			errors.New("pkgErrors passthru"), "pkgErrors passthru", false, "",
 			[]string{"init",
-				"doInit",
+				"doInit1",
 				"doInit",
 				"main",
 				"goexit"},
