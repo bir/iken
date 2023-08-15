@@ -50,7 +50,7 @@ const (
 
 // WithStack wraps the `e` and records the stack, skipping `skip` frames in the stack.
 // 0 skip is considered the function that calls WithStack.
-func WithStack(e interface{}, skip int) error {
+func WithStack(e any, skip int) error {
 	// Clone of pkg.errors.WithStack with support for skip.
 	if e == nil {
 		return nil
@@ -136,7 +136,7 @@ func ExtractStackFrameStop(err error, stopFuncName string) []Frame {
 
 // MarshalStack is a helper to extract the stack trace from an error and make it available as an easily
 // marshalled object (array of file/line/func).
-func MarshalStack(err error) interface{} {
+func MarshalStack(err error) any {
 	if out := ExtractStackFrame(err); len(out) > 0 {
 		return out
 	}

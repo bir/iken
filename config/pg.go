@@ -12,7 +12,7 @@ import (
 var ApplicationName string
 
 // PgDBResolver is a wrapper to the GetPgDBString that adheres to the Resolver interface.
-func PgDBResolver(key string) (interface{}, error) {
+func PgDBResolver(key string) (any, error) {
 	return GetPgDBString(key), nil
 }
 

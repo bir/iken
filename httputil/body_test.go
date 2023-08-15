@@ -19,7 +19,7 @@ type TestObject struct {
 }
 
 func (p *TestObject) UnmarshalJSON(b []byte) error {
-	var requiredCheck map[string]interface{}
+	var requiredCheck map[string]any
 
 	if err := json.Unmarshal(b, &requiredCheck); err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("TestObject.UnmarshalJSON Required: `%v`: %w", string(b), err)}

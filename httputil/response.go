@@ -8,7 +8,7 @@ import (
 )
 
 // JSONWrite is a simple helper utility to return the json encoded obj with appropriate content-type and code.
-func JSONWrite(w http.ResponseWriter, r *http.Request, code int, obj interface{}) {
+func JSONWrite(w http.ResponseWriter, r *http.Request, code int, obj any) {
 	b, err := json.Marshal(obj)
 	if err != nil {
 		ErrorHandler(w, r, fmt.Errorf("JSONWrite:%w", err))

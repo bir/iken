@@ -21,7 +21,7 @@ func TestLogContext(t *testing.T) {
 
 	ctx2 := logctx.NewContextFrom(ctx)
 	logctx.AddToContext(ctx, "key", 1)
-	logctx.AddMapToContext(ctx, map[string]interface{}{"test": "value", "test2": "value2"})
+	logctx.AddMapToContext(ctx, map[string]any{"test": "value", "test2": "value2"})
 
 	logctx.AddStrToContext(ctx2, "key", "value")
 
