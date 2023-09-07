@@ -4,7 +4,6 @@ go 1.21
 
 require (
 	github.com/go-chi/chi/v5 v5.0.10
-	github.com/google/uuid v1.3.1
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1
