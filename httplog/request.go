@@ -17,20 +17,20 @@ const (
 	HTTPStatusCode      = "http.status_code"
 	HTTPMethod          = "http.method"
 	HTTPURLDetailsPath  = "http.url_details.path"
+	NetworkBytesRead    = "network.bytes_read"
 	NetworkBytesWritten = "network.bytes_written"
 	Operation           = "op"
-	Request             = "request.body"
+	Request             = "request"
 	RequestID           = "http.request_id"
 	RequestHeaders      = "request.headers"
-	RequestSize         = "network.bytes_read"
 	RequestError        = "request.body_error"
-	Response            = "response.body"
+	Response            = "response"
 	TraceID             = "trace_id"
 	UserID              = "usr.id"
 )
 
-// MaxRequestBodyLog controls the maximum request body that can be logged.  Anything greater will be truncated.
-var MaxRequestBodyLog = 24 * 1024
+// MaxBodyLog controls the maximum request/response body that can be logged.  Anything greater will be truncated.
+var MaxBodyLog uint32 = 24 * 1024
 
 // now is a utility used for automated testing (overriding the runtime clock).
 var now = time.Now
@@ -108,7 +108,7 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 				Dur(Duration, now().Sub(start))
 
 			if logResponse {
-				l = l.Bytes(Response, responseBuffer.Bytes())
+				l = logctx.AddBytes(l, Response, responseBuffer.Bytes(), MaxBodyLog)
 			}
 
 			logger := l.Logger()
@@ -128,20 +128,16 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 	}
 }
 
-func logBody(logContext zerolog.Context, r *http.Request) zerolog.Context {
+func logBody(l zerolog.Context, r *http.Request) zerolog.Context {
 	body, err := httputil.DumpBody(r)
 	if err != nil {
-		logContext = logContext.Str(RequestError, err.Error())
+		l = l.Str(RequestError, err.Error())
 	} else {
 		size := len(body)
-		logContext = logContext.Int(RequestSize, size)
+		l = l.Int(NetworkBytesRead, size)
 
-		if size > MaxRequestBodyLog {
-			logContext = logContext.Bytes(Request, body[:MaxRequestBodyLog])
-		} else {
-			logContext = logContext.Bytes(Request, body)
-		}
+		l = logctx.AddBytes(l, Request, body, MaxBodyLog)
 	}
 
-	return logContext
+	return l
 }
