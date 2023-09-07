@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -94,6 +95,20 @@ func GetTime(r *http.Request, name string, required bool) (time.Time, bool, erro
 	}
 
 	return timestamp, true, nil
+}
+
+func GetUUID(r *http.Request, name string, required bool) (uuid.UUID, bool, error) {
+	s, ok, err := GetString(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return uuid.UUID{}, false, err
+	}
+
+	id, err := uuid.Parse(s)
+	if err != nil {
+		return uuid.UUID{}, false, fmt.Errorf("invalid uuid: %w", err)
+	}
+
+	return id, true, nil
 }
 
 func GetStringArray(r *http.Request, name string, required bool) ([]string, bool, error) {

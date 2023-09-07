@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -164,6 +165,34 @@ func TestGetTime(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, ok, err := GetTime(tt.r, tt.param, tt.required)
+
+			assert.Equal(t, tt.wantErr, err != nil, "error")
+			assert.Equal(t, tt.want, got, "value")
+			assert.Equal(t, tt.wantOk, ok, "ok")
+		})
+	}
+}
+
+func TestGetUUID(t *testing.T) {
+	testUUID, _ := uuid.Parse("48ab873f-d4fc-4e2b-bf92-9440e431ff54")
+
+	tests := []struct {
+		name     string
+		r        *http.Request
+		param    string
+		required bool
+		want     uuid.UUID
+		wantErr  bool
+		wantOk   bool
+	}{
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=48ab873f-d4fc-4e2b-bf92-9440e431ff54", nil), "foo", true, testUUID, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, uuid.UUID{}, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, uuid.UUID{}, false, false},
+		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, uuid.UUID{}, true, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok, err := GetUUID(tt.r, tt.param, tt.required)
 
 			assert.Equal(t, tt.wantErr, err != nil, "error")
 			assert.Equal(t, tt.want, got, "value")
