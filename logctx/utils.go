@@ -47,18 +47,18 @@ func AddBytesToContext(ctx context.Context, key string, value []byte, maxSize ui
 }
 
 // AddBytes adds the key/value (truncated by maxSize) to the log context.
-func AddBytes(c zerolog.Context, key string, value []byte, maxSize uint32) zerolog.Context {
+func AddBytes(ctx zerolog.Context, key string, value []byte, maxSize uint32) zerolog.Context {
 	size := len(value)
 
-	c = c.Int(key+".size", size)
+	ctx = ctx.Int(key+".size", size)
 
 	if size > int(maxSize) {
-		c = c.Bytes(key+".body", value[:maxSize])
-		c = c.Bool(key+".truncated", true)
-		c = c.Uint32(key+".truncatedSize", maxSize)
+		ctx = ctx.Bytes(key+".body", value[:maxSize])
+		ctx = ctx.Bool(key+".truncated", true)
+		ctx = ctx.Uint32(key+".truncatedSize", maxSize)
 	} else {
-		c = c.Bytes(key+".body", value)
+		ctx = ctx.Bytes(key+".body", value)
 	}
 
-	return c
+	return ctx
 }
