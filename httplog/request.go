@@ -29,7 +29,7 @@ const (
 	UserID              = "usr.id"
 )
 
-// MaxBodyLog controls the maximum request body that can be logged.  Anything greater will be truncated.
+// MaxBodyLog controls the maximum request/response body that can be logged.  Anything greater will be truncated.
 var MaxBodyLog uint32 = 24 * 1024
 
 // now is a utility used for automated testing (overriding the runtime clock).
