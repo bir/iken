@@ -24,13 +24,16 @@ func TestLogContext(t *testing.T) {
 
 	logctx.AddStrToContext(ctx2, "key", "value")
 
+	logctx.AddBytesToContext(ctx2, "small", []byte("12345"), 5)
+	logctx.AddBytesToContext(ctx2, "large", []byte("123456789"), 5)
+
 	zerolog.Ctx(ctx).Log().Msg("ctx")
 
 	zerolog.Ctx(ctx2).Log().Msg("ctx2")
 
-	assert.Equal(t, logBuffer.String(), `{"key":1,"test":"value","test2":"value2","message":"ctx"}
-{"key":"value","message":"ctx2"}
-`)
+	assert.Equal(t, `{"key":1,"test":"value","test2":"value2","message":"ctx"}
+{"key":"value","small.size":5,"small.body":"12345","large.size":9,"large.body":"12345","large.truncated":true,"large.truncatedSize":5,"message":"ctx2"}
+`, logBuffer.String())
 	// ensure NewContext does not propagate cancel
 	cancel()
 	assert.Error(t, ctx.Err())

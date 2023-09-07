@@ -15,7 +15,7 @@ import (
 )
 
 func TestRecover(t *testing.T) {
-	MaxRequestBodyLog = 10
+	MaxBodyLog = 10
 	RecoverBasePath = "iken/httplog/"
 
 	tests := []struct {

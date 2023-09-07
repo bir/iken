@@ -38,3 +38,27 @@ func AddMapToContext(ctx context.Context, fields map[string]any) {
 		return c.Fields(fields)
 	})
 }
+
+// AddBytesToContext adds the key/value to the log context.
+func AddBytesToContext(ctx context.Context, key string, value []byte, maxSize uint32) {
+	zerolog.Ctx(ctx).UpdateContext(func(c zerolog.Context) zerolog.Context {
+		return AddBytes(c, key, value, maxSize)
+	})
+}
+
+// AddBytes adds the key/value (truncated by maxSize) to the log context.
+func AddBytes(c zerolog.Context, key string, value []byte, maxSize uint32) zerolog.Context {
+	size := len(value)
+
+	c = c.Int(key+".size", size)
+
+	if size > int(maxSize) {
+		c = c.Bytes(key+".body", value[:maxSize])
+		c = c.Bool(key+".truncated", true)
+		c = c.Uint32(key+".truncatedSize", maxSize)
+	} else {
+		c = c.Bytes(key+".body", value)
+	}
+
+	return c
+}
