@@ -3,8 +3,9 @@ package cache_test
 import (
 	"testing"
 
-	"github.com/bir/iken/cache"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/bir/iken/cache"
 )
 
 // Type assertion
@@ -53,4 +54,6 @@ func TestNoOpCache(t *testing.T) {
 
 	kk = c.Keys()
 	assert.Equal(t, 0, len(kk))
+
+	c.Clear()
 }
