@@ -16,32 +16,38 @@ var (
 		{
 			// Error
 			errs.WithStack(errors.New("pkgError"), -2), "pkgError", false, "",
-			[]string{"Callers",
+			[]string{
+				"Callers",
 				"WithStack",
 				"init",
 				"doInit1",
 				"doInit",
 				"main",
-				"goexit"},
+				"goexit",
+			},
 		},
 		{
 			// Default
 			errs.WithStack(123, -1), "123", false, "",
-			[]string{"WithStack",
+			[]string{
+				"WithStack",
 				"init",
 				"doInit1",
 				"doInit",
 				"main",
-				"goexit"},
+				"goexit",
+			},
 		},
 		{
 			// String
 			errs.WithStack("1", 0), "1", false, "",
-			[]string{"init",
+			[]string{
+				"init",
 				"doInit1",
 				"doInit",
 				"main",
-				"goexit"},
+				"goexit",
+			},
 		},
 		{
 			// Nil
@@ -52,35 +58,43 @@ var (
 		{
 			// String
 			errs.WithStack("1", 0), "1", false, "doInit1",
-			[]string{"init",
-				"doInit1"},
+			[]string{
+				"init",
+				"doInit1",
+			},
 		}, {
 			// String
 			errs.WithStack("1", 0), "1", false, "No match for this stop",
-			[]string{"init",
+			[]string{
+				"init",
 				"doInit1",
 				"doInit",
 				"main",
-				"goexit"},
+				"goexit",
+			},
 		},
 	}
 	marshallTests = []StackTest{
 		{
 			// errs
 			errs.WithStack("errs.WithStack", 0), "errs.WithStack", false, "",
-			[]string{"init",
+			[]string{
+				"init",
 				"doInit1",
 				"doInit",
 				"main",
-				"goexit"},
+				"goexit",
+			},
 		}, {
 			// pkg.errors - uses a truncated file name
 			errors.New("pkgErrors passthru"), "pkgErrors passthru", false, "",
-			[]string{"init",
+			[]string{
+				"init",
 				"doInit1",
 				"doInit",
 				"main",
-				"goexit"},
+				"goexit",
+			},
 		},
 	}
 )
@@ -137,7 +151,6 @@ func (test StackTest) testFramesMap(t *testing.T, ff []map[string]string) {
 }
 
 func TestStack(t *testing.T) {
-
 	for _, test := range stackTests {
 		if test.testErr(t) {
 			test.testFrameString(t, errs.ExtractStackFrame(test.err))

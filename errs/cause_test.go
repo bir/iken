@@ -3,8 +3,9 @@ package errs_test
 import (
 	"testing"
 
-	"github.com/bir/iken/errs"
 	"github.com/pkg/errors"
+
+	"github.com/bir/iken/errs"
 )
 
 type CauseTest struct {
@@ -13,8 +14,7 @@ type CauseTest struct {
 	isNil bool
 }
 
-type NilErr struct {
-}
+type NilErr struct{}
 
 func (t NilErr) Cause() error {
 	return nil

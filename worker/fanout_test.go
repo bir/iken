@@ -19,6 +19,7 @@ func testInts(ct int) []int {
 
 	return out
 }
+
 func TestNewFanOut(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -27,31 +28,36 @@ func TestNewFanOut(t *testing.T) {
 		inputs      []int
 		out         int64
 	}{
-		{"unbuffered single",
+		{
+			"unbuffered single",
 			1,
 			0,
 			testInts(5),
 			15,
 		},
-		{"buffered x 8",
+		{
+			"buffered x 8",
 			8,
 			10,
 			testInts(16),
 			136,
 		},
-		{"buffered x 2",
+		{
+			"buffered x 2",
 			2,
 			10,
 			testInts(16),
 			136,
 		},
-		{"unbuffered x 16",
+		{
+			"unbuffered x 16",
 			16,
 			0,
 			testInts(16),
 			136,
 		},
-		{"unbuffered x 2",
+		{
+			"unbuffered x 2",
 			2,
 			0,
 			testInts(16),

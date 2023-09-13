@@ -13,7 +13,6 @@ func testNowFunc(now time.Time) func() time.Time {
 }
 
 func TestToTime(t *testing.T) {
-
 	la, _ := time.LoadLocation("America/Los_Angeles")
 
 	tests := []struct {
@@ -138,5 +137,4 @@ func TestAs(t *testing.T) {
 			}
 		})
 	}
-
 }

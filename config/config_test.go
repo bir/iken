@@ -173,5 +173,4 @@ func TestFoo(t *testing.T) {
 	test := viper.GetStringSlice("TEST_ARRAY")
 	fmt.Printf("TEST=%#v\n", cfg.Test)
 	fmt.Printf("test=%#v\n", test)
-
 }

@@ -46,7 +46,6 @@ func TestJoiner(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			if got := Join(test.keys, test.prefix, test.infix, test.postfix, test.mapper); got != test.want {
 				t.Errorf("Join() = `%v`, want `%v`", got, test.want)
 			}

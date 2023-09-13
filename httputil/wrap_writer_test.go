@@ -16,7 +16,6 @@ import (
 )
 
 func TestNewWrapResponse(t *testing.T) {
-
 	tests := []struct {
 		name       string
 		bytes      string

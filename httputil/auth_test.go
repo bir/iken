@@ -41,7 +41,6 @@ func authorize(ctx context.Context, user string, scopes []string) error {
 }
 
 func TestAuthCheck_Auth(t *testing.T) {
-
 	type testCase struct {
 		name      string
 		authorize AuthorizeFunc

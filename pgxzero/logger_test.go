@@ -13,7 +13,6 @@ import (
 )
 
 func TestLogger_Log(t *testing.T) {
-
 	dataWithRequest := map[string]any{"request_id": 123}
 	dataWithoutRequest := map[string]any{"other": 123}
 

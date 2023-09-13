@@ -15,3 +15,7 @@ update: updateAll tidy
 
 updateAll:
 	go get -u ./...
+
+fmt:
+	gofumpt -l -w .
+	gci write . -s standard -s default -s "prefix(github.com/bir/iken)"

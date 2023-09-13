@@ -24,13 +24,15 @@ func TestErrors_Add(t *testing.T) {
 		{"add new", *(&validation.Errors{}).Add("a", errors.New("b")), "test", "bad", "a: b; test: bad.", `{"a":["b"],"test":["bad"]}`},
 		{"add new string", *(&validation.Errors{}).Add("a", "b"), "test", "bad", "a: b; test: bad.", `{"a":["b"],"test":["bad"]}`},
 		{"add existing", *(&validation.Errors{}).Add("a", errors.New("b")), "a", "x", "a: b, x.", `{"a":["b","x"]}`},
-		{"add User",
+		{
+			"add User",
 			*(&validation.Errors{}).Add("a",
 				validation.Error{Message: "PUBLIC", Source: errors.New("PRIVATE")}),
 			"a",
 			"x",
 			"a: PUBLIC: PRIVATE, x.",
-			`{"a":["PUBLIC","x"]}`},
+			`{"a":["PUBLIC","x"]}`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

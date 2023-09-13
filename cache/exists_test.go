@@ -5,8 +5,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/bir/iken/cache"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/bir/iken/cache"
 )
 
 func ExampleExists() {

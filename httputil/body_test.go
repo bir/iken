@@ -48,7 +48,6 @@ func strP(s string) *string {
 }
 
 func TestGetJSONBody(t *testing.T) {
-
 	tests := []struct {
 		name    string
 		r       io.Reader
@@ -72,7 +71,6 @@ func TestGetJSONBody(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.want, tt.body)
-
 		})
 	}
 }
