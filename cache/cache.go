@@ -10,4 +10,6 @@ type Cache[K comparable, V any] interface {
 	Delete(key K)
 	// Keys returns existing keys, the order is indeterminate.
 	Keys() []K
+	// Clear resets the cache.
+	Clear()
 }

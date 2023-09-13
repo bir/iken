@@ -26,3 +26,7 @@ func (c *NoOp[K, _]) Keys() []K {
 // Delete no-op.
 func (c *NoOp[K, V]) Delete(_ K) {
 }
+
+// Clear no-op.
+func (c *NoOp[K, V]) Clear() {
+}

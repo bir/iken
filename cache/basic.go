@@ -11,7 +11,7 @@ type Basic[K comparable, V any] struct {
 // NewBasic creates a new non-thread safe cache.
 func NewBasic[K comparable, V any]() *Basic[K, V] {
 	return &Basic[K, V]{
-		items:   make(map[K]V, 0),
+		items:   make(map[K]V),
 		RWMutex: &sync.RWMutex{},
 	}
 }
@@ -60,4 +60,11 @@ func (c *Basic[K, V]) Delete(key K) {
 	defer c.Unlock()
 
 	delete(c.items, key)
+}
+
+func (c *Basic[K, V]) Clear() {
+	c.Lock()
+	defer c.Unlock()
+
+	c.items = make(map[K]V)
 }

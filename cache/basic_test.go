@@ -1,6 +1,7 @@
 package cache_test
 
 import (
+	crand "crypto/rand"
 	"encoding/base32"
 	"fmt"
 	"math/rand"
@@ -8,8 +9,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/bir/iken/cache"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/bir/iken/cache"
 )
 
 func ExampleBasic() {
@@ -36,7 +38,7 @@ func ExampleBasic() {
 
 func randString(length int) string {
 	randBytes := make([]byte, length)
-	_, err := rand.Read(randBytes)
+	_, err := crand.Read(randBytes)
 	if err != nil {
 		panic(err)
 	}
@@ -96,19 +98,25 @@ func TestCache(t *testing.T) {
 	assert.Equal(t, []string{"b"}, kk)
 }
 
+type foo struct {
+	c cache.Cache[int, string]
+}
+
 func TestMultiThread(t *testing.T) {
-	c := cache.NewBasic[int, string]()
+	f := foo{}
+	f.c = cache.NewBasic[int, string]()
 	var wg sync.WaitGroup
-	for i := int64(0); i < 100; i++ {
+	for i := int64(0); i < 1000; i++ {
 		wg.Add(1)
 		go func(i int64) {
 			defer wg.Done()
+			f.c.Clear()
 			m := rand.New(rand.NewSource(i))
-			for n := 0; n < 10000; n++ {
+			for n := 0; n < 1000; n++ {
 				key := m.Intn(100)
 				value := randString(10)
-				c.Set(key, value)
-				c.Get(key)
+				f.c.Set(key, value)
+				f.c.Get(key)
 			}
 		}(i)
 	}
