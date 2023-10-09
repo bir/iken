@@ -24,6 +24,22 @@ type ClientValidationError struct {
 	Fields  map[string][]string `json:"fields,omitempty"`
 }
 
+// CustomResponseError - respond with a custom status Code and optional Body.
+// content-type is text/plain if Body is a string, otherwise application/json is used.
+type CustomResponseError struct {
+	Code   int
+	Body   any
+	Source error
+}
+
+func (e CustomResponseError) Error() string {
+	if e.Source != nil {
+		return e.Source.Error()
+	}
+
+	return http.StatusText(e.Code)
+}
+
 // ErrorHandler provides some standard handling for errors in an http request
 // flow.
 //
@@ -50,6 +66,7 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	}
 
 	var (
+		customErr      CustomResponseError
 		validationErrs *validation.Errors
 		validationErr  validation.Error
 	)
@@ -70,6 +87,17 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 
 	case errors.Is(err, ErrUnauthorized):
 		HTTPError(w, http.StatusUnauthorized)
+
+	case errors.As(err, &customErr):
+		if customErr.Body != nil {
+			if s, ok := customErr.Body.(string); ok {
+				http.Error(w, s, customErr.Code)
+			} else {
+				JSONWrite(w, r, customErr.Code, customErr.Body)
+			}
+		} else {
+			HTTPError(w, customErr.Code)
+		}
 
 	case errors.As(err, &validationErrs):
 		JSONWrite(w, r, http.StatusBadRequest,
