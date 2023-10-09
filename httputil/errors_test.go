@@ -52,6 +52,10 @@ func TestErrorHandler(t *testing.T) {
 		{"auth error basic", context.Background(), httputil.ErrBasicAuthenticate, "", 401, `Unauthorized` + "\n", "ErrWWWAuthenticate"},
 		{"nested", context.Background(), fmt.Errorf("wrap:%w", fmt.Errorf("wrap2:%w", httputil.ErrBasicAuthenticate)), "", 401, `Unauthorized` + "\n", "wrap:wrap2:ErrWWWAuthenticate"},
 		{"canceled", canceledCtx, canceledCtx.Err(), "FOO", 499, "canceled\n", "context canceled"},
+		{"custom response", context.Background(), httputil.CustomResponseError{Code: 503}, "", 503, "Service Unavailable\n", "Service Unavailable"},
+		{"custom response text", context.Background(), httputil.CustomResponseError{Code: 503, Body: "wait"}, "", 503, "wait\n", "Service Unavailable"},
+		{"custom response source", context.Background(), httputil.CustomResponseError{Code: 503, Body: "wait", Source: httputil.ErrNotFound}, "", 503, "wait\n", "not found"},
+		{"custom response json", context.Background(), httputil.CustomResponseError{Code: 503, Body: httputil.ClientValidationError{Code: 42, Message: "nope"}, Source: httputil.ErrNotFound}, "", 503, `{"code":42,"message":"nope"}`, "not found"},
 	}
 
 	for _, test := range tests {
