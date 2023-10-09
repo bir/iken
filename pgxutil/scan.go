@@ -15,6 +15,7 @@ func ToArray[T comparable](rows pgx.Rows, err error) ([]T, error) {
 
 	for rows.Next() {
 		var row T
+
 		err := rows.Scan(&row)
 		if err != nil {
 			return nil, fmt.Errorf("scan:%w", err)
