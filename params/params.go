@@ -16,15 +16,21 @@ var ErrNotFound = errors.New("not found")
 
 func GetString(r *http.Request, name string, required bool) (string, bool, error) {
 	param := chi.URLParam(r, name)
-	if len(param) == 0 {
+
+	if param == "" {
 		param = r.URL.Query().Get(name)
+	}
+
+	// fallback to a header lookup
+	if param == "" {
+		param = r.Header.Get(name)
 	}
 
 	if required && len(param) == 0 {
 		return "", false, fmt.Errorf("%s: %w", name, ErrNotFound)
 	}
 
-	return param, true, nil
+	return param, param != "", nil
 }
 
 func GetInt32(r *http.Request, name string, required bool) (int32, bool, error) {
