@@ -26,7 +26,7 @@ type WriterProxy interface {
 	// Writes will be sent to the proxy before being written to this
 	// io.Writer. It is illegal for the tee'd writer to be modified
 	// concurrently with writes.
-	Tee(io.Writer)
+	Tee(w io.Writer)
 	// Unwrap returns the original proxied target.
 	Unwrap() http.ResponseWriter
 }
