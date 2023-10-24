@@ -12,6 +12,41 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGetString(t *testing.T) {
+	newHeaderRequest := func(key, value string) *http.Request {
+		r := httptest.NewRequest("GET", "/ping", nil)
+		if key != "" {
+			r.Header.Set(key, value)
+		}
+
+		return r
+	}
+
+	tests := []struct {
+		name     string
+		r        *http.Request
+		param    string
+		required bool
+		want     string
+		wantErr  bool
+		wantOk   bool
+	}{
+		{" header required present", newHeaderRequest("foo", "123"), "foo", true, "123", false, true},
+		{" header required missing", newHeaderRequest("", ""), "foo", true, "", true, false},
+		{" header not required present", newHeaderRequest("foo", "123"), "foo", false, "123", false, true},
+		{" header not required missing", newHeaderRequest("", ""), "foo", false, "", false, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok, err := GetString(tt.r, tt.param, tt.required)
+
+			assert.Equal(t, tt.wantErr, err != nil, "error")
+			assert.Equal(t, tt.want, got, "value")
+			assert.Equal(t, tt.wantOk, ok, "ok")
+		})
+	}
+}
+
 func TestGetInt32(t *testing.T) {
 	tests := []struct {
 		name     string
