@@ -74,6 +74,7 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 			}
 
 			var responseBuffer *bytes.Buffer
+
 			wrappedWriter := httputil.WrapWriter(w)
 
 			if logResponse {
@@ -112,15 +113,16 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 			}
 
 			logger := l.Logger()
+
 			var event *zerolog.Event
 
 			switch {
 			case status >= http.StatusInternalServerError:
-				event = logger.Error() //nolint
+				event = logger.Error()
 			case status >= http.StatusBadRequest:
-				event = logger.Warn() //nolint
+				event = logger.Warn()
 			default:
-				event = logger.Info() //nolint
+				event = logger.Info()
 			}
 
 			event.Msgf("%d %s %s", status, r.Method, r.URL)

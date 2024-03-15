@@ -2,7 +2,7 @@ package httputil
 
 import (
 	"bufio"
-	"fmt"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -122,7 +122,7 @@ func (f *fancyWriter) Flush() {
 	f.basicWriter.Flush()
 }
 
-var ErrUnsupported = fmt.Errorf("not implemented")
+var ErrUnsupported = errors.New("not implemented")
 
 func (f *fancyWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	hj, ok := f.basicWriter.ResponseWriter.(http.Hijacker)
