@@ -7,12 +7,12 @@ package errs
 // This supports both Go 1.13+ style `UnWrap` and pkg.errors style
 // `Cause` chaining.
 func Cause(err error) error {
-	u, ok := err.(interface{ Unwrap() error }) //nolint:errorlint // false positive
+	u, ok := err.(interface{ Unwrap() error })
 	if ok {
 		return u.Unwrap() //nolint:wrapcheck // defeats the whole point
 	}
 
-	c, ok := err.(interface{ Cause() error }) //nolint:errorlint // false positive
+	c, ok := err.(interface{ Cause() error })
 	if ok {
 		return c.Cause() //nolint:wrapcheck // defeats the whole point
 	}
