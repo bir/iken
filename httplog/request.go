@@ -104,6 +104,7 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 			status := wrappedWriter.Status()
 
 			l := zerolog.Ctx(r.Context()).With().
+				Ctx(r.Context()).
 				Int(HTTPStatusCode, status).
 				Int(NetworkBytesWritten, wrappedWriter.BytesWritten()).
 				Dur(Duration, now().Sub(start))

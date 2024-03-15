@@ -52,7 +52,7 @@ func LogRecoverError(ctx context.Context, stackSkip int, recoverErr any) {
 
 	s := string(debug.Stack())
 
-	zerolog.Ctx(ctx).Err(err).Strs(httputil.LogStack, SimplifyStack(s, stackSkip+1)).Msg("Panic")
+	zerolog.Ctx(ctx).Err(err).Ctx(ctx).Strs(httputil.LogStack, SimplifyStack(s, stackSkip+1)).Msg("Panic")
 }
 
 var RecoverBasePath = initBasePath()
