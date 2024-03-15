@@ -63,11 +63,12 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 			}
 
 			requestID := r.Header.Get(httputil.RequestIDHeader)
-			ctx := logctx.SetID(r.Context(), requestID)
+
+			r = r.WithContext(logctx.SetID(r.Context(), requestID))
 
 			if !logRequest {
 				if next != nil {
-					next.ServeHTTP(w, r.WithContext(ctx))
+					next.ServeHTTP(w, r)
 				}
 
 				return
@@ -82,7 +83,7 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 				wrappedWriter.Tee(responseBuffer)
 			}
 
-			zerolog.Ctx(ctx).UpdateContext(func(logContext zerolog.Context) zerolog.Context {
+			zerolog.Ctx(r.Context()).UpdateContext(func(logContext zerolog.Context) zerolog.Context {
 				if logRequestBody {
 					logContext = logBody(logContext, r)
 				}
@@ -98,7 +99,7 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 			})
 
 			if next != nil {
-				next.ServeHTTP(wrappedWriter, r.WithContext(ctx))
+				next.ServeHTTP(wrappedWriter, r)
 			}
 
 			status := wrappedWriter.Status()
