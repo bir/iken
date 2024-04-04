@@ -1,12 +1,12 @@
 run:
   go: 1.22
   deadline: 10m
-  skip-dirs:
-    - temp
-  skip-files:
-    - ".*_gen.go$"
   tests: false
-  sort-results: true
+issues:
+  exclude-files:
+    - ".*_gen.go$"
+  exclude-dirs:
+    - temp
 linters:
   enable-all: true
   disable:
@@ -25,6 +25,7 @@ linters:
     - exhaustruct
     - gocognit
     - depguard
+    - intrange #pending 1.57.3
 linters-settings:
   cyclop:
     max-complexity: 18
