@@ -26,7 +26,7 @@ func GetJSONBody(r io.Reader, body any) error {
 	)
 
 	switch {
-	case err == io.EOF: //nolint:errorlint
+	case err == io.EOF:
 		return ErrMissingBody
 	case errors.As(err, &validationError):
 		return err //nolint:wrapcheck

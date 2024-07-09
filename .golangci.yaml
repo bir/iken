@@ -1,6 +1,5 @@
 run:
-  go: 1.22
-  deadline: 10m
+  go: "1.22"
   tests: false
 issues:
   exclude-files:
@@ -10,18 +9,10 @@ issues:
 linters:
   enable-all: true
   disable:
+    - execinquery
     - gochecknoglobals
-    - interfacer
-    - golint
-    - maligned
-    - scopelint
-    - exhaustivestruct
+    - gomnd
     - ireturn
-    - ifshort
-    - deadcode
-    - structcheck
-    - varcheck
-    - nosnakecase
     - exhaustruct
     - gocognit
     - depguard
