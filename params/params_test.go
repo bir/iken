@@ -1,13 +1,11 @@
 package params
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -238,9 +236,7 @@ func TestGetUUID(t *testing.T) {
 
 func TestURLParam(t *testing.T) {
 	r, _ := http.NewRequest("GET", "/", nil)
-	ctx := chi.NewRouteContext()
-	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, ctx))
-	ctx.URLParams.Add("id", "12345")
+	r.SetPathValue("id", "12345")
 
 	got, ok, err := GetInt(r, "id", true)
 
