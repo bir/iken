@@ -8,14 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
 var ErrNotFound = errors.New("not found")
 
 func GetString(r *http.Request, name string, required bool) (string, bool, error) {
-	param := chi.URLParam(r, name)
+	param := r.PathValue(name)
 
 	if param == "" {
 		param = r.URL.Query().Get(name)
