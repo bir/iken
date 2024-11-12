@@ -82,7 +82,10 @@ func TestGetFile(t *testing.T) {
 			}
 
 			if tt.want == "" {
-				assert.Nil(t, f)
+				assert.False(t, ok)
+				assert.Nil(t, f.File)
+				assert.Zero(t, f.Size)
+				assert.Empty(t, f.Filename)
 				return
 			}
 
