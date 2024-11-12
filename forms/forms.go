@@ -46,113 +46,113 @@ func GetFile(r *http.Request, name string, required bool) (File, bool, error) {
 
 type LookupString func(key string) string
 
-func GetString(lookup LookupString, name string, required bool) (string, error) {
-	param := lookup(name)
+func GetString(lookup LookupString, name string, required bool) (string, bool, error) {
+	s := lookup(name)
 
-	if required && len(param) == 0 {
-		return "", fmt.Errorf("%s: %w", name, ErrNotFound)
+	if required && len(s) == 0 {
+		return "", false, fmt.Errorf("%s: %w", name, ErrNotFound)
 	}
 
-	return param, nil
+	return s, s != "", nil
 }
 
-func GetInt32(lookup LookupString, name string, required bool) (int32, error) {
-	s, err := GetString(lookup, name, required)
-	if err != nil || len(s) == 0 {
-		return 0, err
+func GetInt32(lookup LookupString, name string, required bool) (int32, bool, error) {
+	s, ok, err := GetString(lookup, name, required)
+	if err != nil || !ok {
+		return 0, ok, err
 	}
 
 	i, err := strconv.ParseInt(s, 10, 32)
 	if err != nil {
-		return 0, fmt.Errorf("invalid int32: %w", err)
+		return 0, false, fmt.Errorf("invalid int32: %w", err)
 	}
 
-	return int32(i), nil
+	return int32(i), true, nil
 }
 
-func GetInt64(lookup LookupString, name string, required bool) (int64, error) {
-	s, err := GetString(lookup, name, required)
-	if err != nil || len(s) == 0 {
-		return 0, err
+func GetInt64(lookup LookupString, name string, required bool) (int64, bool, error) {
+	s, ok, err := GetString(lookup, name, required)
+	if err != nil || !ok {
+		return 0, ok, err
 	}
 
 	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("invalid int32: %w", err)
+		return 0, false, fmt.Errorf("invalid int32: %w", err)
 	}
 
-	return i, nil
+	return i, true, nil
 }
 
-func GetBool(lookup LookupString, name string, required bool) (bool, error) {
-	s, err := GetString(lookup, name, required)
-	if err != nil || len(s) == 0 {
-		return false, err
+func GetBool(lookup LookupString, name string, required bool) (bool, bool, error) {
+	s, ok, err := GetString(lookup, name, required)
+	if err != nil || !ok {
+		return false, ok, err
 	}
 
 	b, err := strconv.ParseBool(s)
 	if err != nil {
-		return false, fmt.Errorf("invalid bool: %w", err)
+		return false, false, fmt.Errorf("invalid bool: %w", err)
 	}
 
-	return b, nil
+	return b, true, nil
 }
 
-func GetInt(lookup LookupString, name string, required bool) (int, error) {
-	s, err := GetString(lookup, name, required)
-	if err != nil || len(s) == 0 {
-		return 0, err
+func GetInt(lookup LookupString, name string, required bool) (int, bool, error) {
+	s, ok, err := GetString(lookup, name, required)
+	if err != nil || !ok {
+		return 0, ok, err
 	}
 
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		return 0, fmt.Errorf("invalid int: %w", err)
+		return 0, false, fmt.Errorf("invalid int: %w", err)
 	}
 
-	return i, nil
+	return i, true, nil
 }
 
-func GetTime(lookup LookupString, name string, required bool) (time.Time, error) {
-	s, err := GetString(lookup, name, required)
-	if err != nil || len(s) == 0 {
-		return time.Time{}, err
+func GetTime(lookup LookupString, name string, required bool) (time.Time, bool, error) {
+	s, ok, err := GetString(lookup, name, required)
+	if err != nil || !ok {
+		return time.Time{}, ok, err
 	}
 
 	timestamp, err := time.Parse(time.RFC3339, s)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("invalid RFC3339 date: %w", err)
+		return time.Time{}, false, fmt.Errorf("invalid RFC3339 date: %w", err)
 	}
 
-	return timestamp, nil
+	return timestamp, true, nil
 }
 
-func GetUUID(lookup LookupString, name string, required bool) (uuid.UUID, error) {
-	s, err := GetString(lookup, name, required)
-	if err != nil || len(s) == 0 {
-		return uuid.UUID{}, err
+func GetUUID(lookup LookupString, name string, required bool) (uuid.UUID, bool, error) {
+	s, ok, err := GetString(lookup, name, required)
+	if err != nil || !ok {
+		return uuid.UUID{}, ok, err
 	}
 
 	id, err := uuid.Parse(s)
 	if err != nil {
-		return uuid.UUID{}, fmt.Errorf("invalid uuid: %w", err)
+		return uuid.UUID{}, false, fmt.Errorf("invalid uuid: %w", err)
 	}
 
-	return id, nil
+	return id, true, nil
 }
 
-func GetStringArray(lookup LookupString, name string, required bool) ([]string, error) {
-	s, err := GetString(lookup, name, required)
-	if err != nil || len(s) == 0 {
-		return nil, err
+func GetStringArray(lookup LookupString, name string, required bool) ([]string, bool, error) {
+	s, ok, err := GetString(lookup, name, required)
+	if err != nil || !ok {
+		return nil, ok, err
 	}
 
-	return strings.Split(s, ","), nil
+	return strings.Split(s, ","), true, nil
 }
 
-func GetInt32Array(lookup LookupString, name string, required bool) ([]int32, error) {
-	pp, err := GetStringArray(lookup, name, required)
+func GetInt32Array(lookup LookupString, name string, required bool) ([]int32, bool, error) {
+	pp, ok, err := GetStringArray(lookup, name, required)
 	if err != nil || len(pp) == 0 {
-		return nil, err
+		return nil, ok, err
 	}
 
 	out := make([]int32, len(pp))
@@ -160,30 +160,30 @@ func GetInt32Array(lookup LookupString, name string, required bool) ([]int32, er
 	for i, p := range pp {
 		i32, err := strconv.ParseInt(p, 10, 32)
 		if err != nil {
-			return nil, fmt.Errorf("invalid int32:%q: %w", p, err)
+			return nil, false, fmt.Errorf("invalid int32:%q: %w", p, err)
 		}
 
 		out[i] = int32(i32)
 	}
 
-	return out, nil
+	return out, true, nil
 }
 
-func GetEnum[T comparable](lookup LookupString, name string, required bool, parser func(string) T) (T, error) {
+func GetEnum[T comparable](lookup LookupString, name string, required bool, parser func(string) T) (T, bool, error) {
 	var out T
 
-	s, err := GetString(lookup, name, required)
-	if err != nil || len(s) == 0 {
-		return out, err
+	s, ok, err := GetString(lookup, name, required)
+	if err != nil || !ok {
+		return out, ok, err
 	}
 
-	return parser(s), nil
+	return parser(s), true, nil
 }
 
-func GetEnumArray[T comparable](lookup LookupString, name string, required bool, parser func(string) T) ([]T, error) {
-	pp, err := GetStringArray(lookup, name, required)
-	if err != nil || len(pp) == 0 {
-		return nil, err
+func GetEnumArray[T comparable](fn LookupString, name string, required bool, parser func(string) T) ([]T, bool, error) {
+	pp, ok, err := GetStringArray(fn, name, required)
+	if err != nil || !ok {
+		return nil, ok, err
 	}
 
 	out := make([]T, len(pp))
@@ -192,5 +192,5 @@ func GetEnumArray[T comparable](lookup LookupString, name string, required bool,
 		out[i] = parser(p)
 	}
 
-	return out, nil
+	return out, true, nil
 }
