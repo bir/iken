@@ -9,13 +9,11 @@ issues:
 linters:
   enable-all: true
   disable:
-    - execinquery
     - exportloopref
     - gochecknoglobals
     - ireturn
     - exhaustruct
     - gocognit
-    - gomnd
     - depguard
     - intrange #pending 1.57.3
 linters-settings:
