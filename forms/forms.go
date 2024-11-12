@@ -36,14 +36,6 @@ func GetFile(r *http.Request, name string, required bool) (File, bool, error) {
 		return File{}, false, fmt.Errorf("ToFormFile: %w", err)
 	}
 
-	if file == nil || header == nil || header.Size == 0 {
-		if required {
-			return File{}, false, fmt.Errorf("%s: %w", name, ErrNotFound)
-		}
-
-		return File{}, false, nil
-	}
-
 	return File{
 		File:     file,
 		Filename: header.Filename,
