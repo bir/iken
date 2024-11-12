@@ -69,7 +69,7 @@ func TestGetFile(t *testing.T) {
 			r, err := newRequest(tt.notMultipart)
 			assert.NoError(t, err)
 
-			f, err := GetFile(r, tt.key, tt.required)
+			f, ok, err := GetFile(r, tt.key, tt.required)
 			if tt.errMsg != "" {
 				assert.ErrorContains(t, err, tt.errMsg)
 				return
@@ -77,8 +77,8 @@ func TestGetFile(t *testing.T) {
 
 			assert.NoError(t, err)
 
-			if f != nil {
-				defer f.Close()
+			if ok {
+				defer f.File.Close()
 			}
 
 			if tt.want == "" {

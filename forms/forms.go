@@ -22,51 +22,40 @@ type File struct {
 	Size     int64
 }
 
-func (f *File) Read(b []byte) (n int, err error) {
-	return f.File.Read(b)
-}
-
-func (f *File) Close() error {
-	if f.File == nil {
-		return nil
-	}
-
-	return f.File.Close()
-}
-
-func GetFile(r *http.Request, name string, required bool) (*File, error) {
+func GetFile(r *http.Request, name string, required bool) (File, bool, error) {
 	file, header, err := r.FormFile(name)
 	if errors.Is(err, http.ErrMissingFile) {
 		if required {
-			return nil, fmt.Errorf("%s: %w", name, ErrNotFound)
-		} else {
-			return nil, nil
+			return File{}, false, fmt.Errorf("%s: %w", name, ErrNotFound)
 		}
+
+		return File{}, false, nil
 	}
+
 	if err != nil {
-		return nil, fmt.Errorf("ToFormFile: %w", err)
+		return File{}, false, fmt.Errorf("ToFormFile: %w", err)
 	}
 
 	if file == nil || header == nil || header.Size == 0 {
 		if required {
-			return nil, fmt.Errorf("%s: %w", name, ErrNotFound)
-		} else {
-			return nil, nil
+			return File{}, false, fmt.Errorf("%s: %w", name, ErrNotFound)
 		}
+
+		return File{}, false, nil
 	}
 
-	return &File{
+	return File{
 		File:     file,
 		Filename: header.Filename,
 		Header:   header.Header,
 		Size:     header.Size,
-	}, nil
+	}, true, nil
 }
 
 type LookupString func(key string) string
 
-func GetString(lookupString LookupString, name string, required bool) (string, error) {
-	param := lookupString(name)
+func GetString(lookup LookupString, name string, required bool) (string, error) {
+	param := lookup(name)
 
 	if required && len(param) == 0 {
 		return "", fmt.Errorf("%s: %w", name, ErrNotFound)
@@ -75,8 +64,8 @@ func GetString(lookupString LookupString, name string, required bool) (string, e
 	return param, nil
 }
 
-func GetInt32(lookupString LookupString, name string, required bool) (int32, error) {
-	s, err := GetString(lookupString, name, required)
+func GetInt32(lookup LookupString, name string, required bool) (int32, error) {
+	s, err := GetString(lookup, name, required)
 	if err != nil || len(s) == 0 {
 		return 0, err
 	}
@@ -89,8 +78,8 @@ func GetInt32(lookupString LookupString, name string, required bool) (int32, err
 	return int32(i), nil
 }
 
-func GetInt64(lookupString LookupString, name string, required bool) (int64, error) {
-	s, err := GetString(lookupString, name, required)
+func GetInt64(lookup LookupString, name string, required bool) (int64, error) {
+	s, err := GetString(lookup, name, required)
 	if err != nil || len(s) == 0 {
 		return 0, err
 	}
@@ -103,8 +92,8 @@ func GetInt64(lookupString LookupString, name string, required bool) (int64, err
 	return i, nil
 }
 
-func GetBool(lookupString LookupString, name string, required bool) (bool, error) {
-	s, err := GetString(lookupString, name, required)
+func GetBool(lookup LookupString, name string, required bool) (bool, error) {
+	s, err := GetString(lookup, name, required)
 	if err != nil || len(s) == 0 {
 		return false, err
 	}
@@ -117,8 +106,8 @@ func GetBool(lookupString LookupString, name string, required bool) (bool, error
 	return b, nil
 }
 
-func GetInt(lookupString LookupString, name string, required bool) (int, error) {
-	s, err := GetString(lookupString, name, required)
+func GetInt(lookup LookupString, name string, required bool) (int, error) {
+	s, err := GetString(lookup, name, required)
 	if err != nil || len(s) == 0 {
 		return 0, err
 	}
@@ -131,8 +120,8 @@ func GetInt(lookupString LookupString, name string, required bool) (int, error) 
 	return i, nil
 }
 
-func GetTime(lookupString LookupString, name string, required bool) (time.Time, error) {
-	s, err := GetString(lookupString, name, required)
+func GetTime(lookup LookupString, name string, required bool) (time.Time, error) {
+	s, err := GetString(lookup, name, required)
 	if err != nil || len(s) == 0 {
 		return time.Time{}, err
 	}
@@ -145,8 +134,8 @@ func GetTime(lookupString LookupString, name string, required bool) (time.Time, 
 	return timestamp, nil
 }
 
-func GetUUID(lookupString LookupString, name string, required bool) (uuid.UUID, error) {
-	s, err := GetString(lookupString, name, required)
+func GetUUID(lookup LookupString, name string, required bool) (uuid.UUID, error) {
+	s, err := GetString(lookup, name, required)
 	if err != nil || len(s) == 0 {
 		return uuid.UUID{}, err
 	}
@@ -159,8 +148,8 @@ func GetUUID(lookupString LookupString, name string, required bool) (uuid.UUID, 
 	return id, nil
 }
 
-func GetStringArray(lookupString LookupString, name string, required bool) ([]string, error) {
-	s, err := GetString(lookupString, name, required)
+func GetStringArray(lookup LookupString, name string, required bool) ([]string, error) {
+	s, err := GetString(lookup, name, required)
 	if err != nil || len(s) == 0 {
 		return nil, err
 	}
@@ -168,8 +157,8 @@ func GetStringArray(lookupString LookupString, name string, required bool) ([]st
 	return strings.Split(s, ","), nil
 }
 
-func GetInt32Array(lookupString LookupString, name string, required bool) ([]int32, error) {
-	pp, err := GetStringArray(lookupString, name, required)
+func GetInt32Array(lookup LookupString, name string, required bool) ([]int32, error) {
+	pp, err := GetStringArray(lookup, name, required)
 	if err != nil || len(pp) == 0 {
 		return nil, err
 	}
@@ -188,10 +177,10 @@ func GetInt32Array(lookupString LookupString, name string, required bool) ([]int
 	return out, nil
 }
 
-func GetEnum[T comparable](lookupString LookupString, name string, required bool, parser func(string) T) (T, error) {
+func GetEnum[T comparable](lookup LookupString, name string, required bool, parser func(string) T) (T, error) {
 	var out T
 
-	s, err := GetString(lookupString, name, required)
+	s, err := GetString(lookup, name, required)
 	if err != nil || len(s) == 0 {
 		return out, err
 	}
@@ -199,8 +188,8 @@ func GetEnum[T comparable](lookupString LookupString, name string, required bool
 	return parser(s), nil
 }
 
-func GetEnumArray[T comparable](lookupString LookupString, name string, required bool, parser func(string) T) ([]T, error) {
-	pp, err := GetStringArray(lookupString, name, required)
+func GetEnumArray[T comparable](lookup LookupString, name string, required bool, parser func(string) T) ([]T, error) {
+	pp, err := GetStringArray(lookup, name, required)
 	if err != nil || len(pp) == 0 {
 		return nil, err
 	}
