@@ -48,3 +48,7 @@ func AddHeaders(w http.ResponseWriter, headers http.Header) {
 		}
 	}
 }
+
+func SuccessStatus(status int) bool {
+	return status/100 == 2
+}

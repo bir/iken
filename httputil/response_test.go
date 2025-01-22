@@ -123,6 +123,11 @@ func TestJSONWrite(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s\n", http.StatusText(http.StatusInternalServerError)), string(b))
 }
 
+func TestSuccessStatus(t *testing.T) {
+	assert.True(t, SuccessStatus(http.StatusOK))
+	assert.False(t, SuccessStatus(http.StatusFound))
+}
+
 type badJson struct{}
 
 func (badJson) MarshalJSON() ([]byte, error) {
