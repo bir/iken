@@ -64,6 +64,19 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 
 			requestID := r.Header.Get(httputil.RequestIDHeader)
 
+			// Create new zerolog logger from the requests context.
+			// Important because (zerolog.Context).UpdateContext() isn't thread-safe.
+			//
+			// https://github.com/rs/zerolog/blob/1869fa55bea5c09e93a06368c6a8756780dca5f7/log.go#L292-L299
+			//
+			// This is also how zerolog's default logging http handler does it
+			//
+			// https://github.com/rs/zerolog/blob/1869fa55bea5c09e93a06368c6a8756780dca5f7/hlog/hlog.go#L24-L34
+			subLogger := zerolog.Ctx(r.Context()).With().Logger()
+
+			// Add new logger to request
+			r = r.WithContext(subLogger.WithContext(r.Context()))
+
 			r = r.WithContext(logctx.SetID(r.Context(), requestID))
 
 			if !logRequest {
