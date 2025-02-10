@@ -2,6 +2,7 @@ package httplog
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -20,6 +21,9 @@ import (
 func TestRequestLogger(t *testing.T) {
 	MaxBodyLog = 10
 	RecoverBasePath = "iken/httplog/"
+
+	logOutput := bytes.NewBuffer(nil)
+	loggerContext := zerolog.New(logOutput).WithContext(context.Background())
 
 	tests := []struct {
 		name         string
@@ -53,8 +57,6 @@ func TestRequestLogger(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			logOutput := bytes.NewBuffer(nil)
-
 			h := RequestLogger(tt.shouldLog)
 
 			w := httptest.NewRecorder()
@@ -65,7 +67,7 @@ func TestRequestLogger(t *testing.T) {
 			}
 
 			now = startNow
-			h(tt.next).ServeHTTP(w, r.WithContext(zerolog.New(logOutput).WithContext(r.Context())))
+			h(tt.next).ServeHTTP(w, r.WithContext(loggerContext))
 
 			got := logOutput.String()
 
@@ -84,6 +86,7 @@ func TestRequestLogger(t *testing.T) {
 			assert.Nil(t, err, "json Unmarshal want")
 
 			assert.Equal(t, want, result, "logs")
+			logOutput.Truncate(0)
 		})
 	}
 }
