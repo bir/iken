@@ -16,7 +16,7 @@ import (
 // ErrInternal is the default error returned from a panic.
 var ErrInternal = errors.New("internal error")
 
-// RecoverLogger returns a handler that call initializes Op in the context, and logs each request.
+// RecoverLogger injects log into requests context and handles panic recovery and logging with stack.
 func RecoverLogger(log zerolog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

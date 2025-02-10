@@ -49,7 +49,9 @@ func LogRequestBody(_ *http.Request) (bool, bool, bool) { return true, true, fal
 
 func LogAll(_ *http.Request) (bool, bool, bool) { return true, true, true }
 
-// RequestLogger returns a handler that call initializes Op in the context, and logs each request.
+// RequestLogger logs optional data, as specified by the shouldLog func.
+// NOTE: The zerolog context logger MUST be initialized prior to this handler invocation.   This is generally done by
+// using the recover logger, or by using the zerolog/hlog.NewHandler directly.
 func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //nolint: funlen
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
