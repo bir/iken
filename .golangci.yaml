@@ -9,13 +9,13 @@ issues:
 linters:
   enable-all: true
   disable:
-    - exportloopref
     - gochecknoglobals
     - ireturn
     - exhaustruct
     - gocognit
     - depguard
     - intrange #pending 1.57.3
+    - tenv
 linters-settings:
   cyclop:
     max-complexity: 18
