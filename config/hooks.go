@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"regexp"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -24,7 +25,12 @@ func StringToLocationHookFunc(f reflect.Type, t reflect.Type, data any) (any, er
 		return data, nil
 	}
 
-	l, err := time.LoadLocation(data.(string))
+	s, ok := data.(string)
+	if !ok {
+		return data, nil
+	}
+
+	l, err := time.LoadLocation(s)
 	if err != nil {
 		return time.UTC, fmt.Errorf("%w: `%v`", ErrInvalidLocation, data)
 	}
@@ -58,7 +64,12 @@ func StringToURLHookFunc(f reflect.Type, t reflect.Type, data any) (any, error) 
 		return data, nil
 	}
 
-	u, err := url.Parse(data.(string))
+	s, ok := data.(string)
+	if !ok {
+		return data, nil
+	}
+
+	u, err := url.Parse(s)
 	if err != nil {
 		return nil, fmt.Errorf("%w: `%v`", ErrInvalidURL, data)
 	}
@@ -79,7 +90,35 @@ func StringToTimeFunc(f reflect.Type, t reflect.Type, data any) (any, error) {
 		return data, nil
 	}
 
-	out, err := time.Parse(time.RFC3339, data.(string))
+	s, ok := data.(string)
+	if !ok {
+		return data, nil
+	}
+
+	out, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return nil, fmt.Errorf("%w: `%v`", ErrInvalidTime, data)
+	}
+
+	return out, nil
+}
+
+// StringToRegexFunc converts strings to time.Time.
+func StringToRegexFunc(f reflect.Type, t reflect.Type, data any) (any, error) {
+	if f.Kind() != reflect.String {
+		return data, nil
+	}
+
+	if t != reflect.TypeOf(regexp.Regexp{}) {
+		return data, nil
+	}
+
+	s, ok := data.(string)
+	if !ok {
+		return data, nil
+	}
+
+	out, err := regexp.Compile(s)
 	if err != nil {
 		return nil, fmt.Errorf("%w: `%v`", ErrInvalidTime, data)
 	}
@@ -94,6 +133,7 @@ func defaultDecoderConfig(c *mapstructure.DecoderConfig) {
 		StringToMapStringStringHookFunc,
 		StringToURLHookFunc,
 		StringToTimeFunc,
+		StringToRegexFunc,
 		mapstructure.StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","))
 }

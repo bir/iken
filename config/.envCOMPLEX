@@ -1,0 +1,3 @@
+TEST_MAP="{\"one\":\"1\",\"two\":\"2\"}"
+TIME=2022-01-01T00:00:00Z
+PATTERNS=123,asdf,https://a.b/c,^http:*
