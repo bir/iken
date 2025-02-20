@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 	"time"
 
@@ -95,8 +96,9 @@ func TestSetup(t *testing.T) {
 }
 
 type ComplexConfig struct {
-	TestMap map[string]string `env:"TEST_MAP"`
-	Time    time.Time         `env:"TIME"`
+	TestMap  map[string]string `env:"TEST_MAP"`
+	Time     time.Time         `env:"TIME"`
+	Patterns []regexp.Regexp   `json:",omitempty" env:"PATTERNS"`
 }
 
 func TestComplex(t *testing.T) {
@@ -113,6 +115,7 @@ func TestComplex(t *testing.T) {
 	}{
 		{"defaults", nil, &ComplexConfig{}, nil, `{"TestMap":{"one":"1","two":"2"},"Time":"2021-01-01T00:00:00Z"}`, false},
 		{"EmptyEnv", func() { config.File = ".envEMPTY" }, &ComplexConfig{}, nil, `{"TestMap":null,"Time":"0001-01-01T00:00:00Z"}`, false},
+		{"Complex", func() { config.File = ".envCOMPLEX" }, &ComplexConfig{}, nil, `{"TestMap":{"one":"1","two":"2"},"Time":"2022-01-01T00:00:00Z","Patterns":["123","asdf","https://a.b/c","^http:*"]}`, false},
 		{"BadTime", func() { config.File = ".envBADTIME" }, &ComplexConfig{}, nil, `{"TestMap":null,"Time":"0001-01-01T00:00:00Z"}`, true},
 		{"BadMap", nil, &ComplexConfig{}, map[string]string{"TEST_MAP": "FOO"}, `{"TestMap":{},"Time":"2021-01-01T00:00:00Z"}`, false},
 	}

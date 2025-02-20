@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"regexp"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -87,6 +88,24 @@ func StringToTimeFunc(f reflect.Type, t reflect.Type, data any) (any, error) {
 	return out, nil
 }
 
+// StringToRegexFunc converts strings to time.Time.
+func StringToRegexFunc(f reflect.Type, t reflect.Type, data any) (any, error) {
+	if f.Kind() != reflect.String {
+		return data, nil
+	}
+
+	if t != reflect.TypeOf(regexp.Regexp{}) {
+		return data, nil
+	}
+
+	out, err := regexp.Compile(data.(string))
+	if err != nil {
+		return nil, fmt.Errorf("%w: `%v`", ErrInvalidTime, data)
+	}
+
+	return out, nil
+}
+
 func defaultDecoderConfig(c *mapstructure.DecoderConfig) {
 	c.TagName = TagName
 	c.DecodeHook = mapstructure.ComposeDecodeHookFunc(
@@ -94,6 +113,7 @@ func defaultDecoderConfig(c *mapstructure.DecoderConfig) {
 		StringToMapStringStringHookFunc,
 		StringToURLHookFunc,
 		StringToTimeFunc,
+		StringToRegexFunc,
 		mapstructure.StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","))
 }
