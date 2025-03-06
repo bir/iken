@@ -38,16 +38,33 @@ var now = time.Now
 // stackSkip defines the lines to skip in the stack logger - this is determined by the structure of this code.
 const stackSkip = 3
 
+type FnToLogLevel func(r *http.Request, status int) zerolog.Level
+
+func StatusToLogLevel(_ *http.Request, status int) zerolog.Level {
+	switch {
+	case status >= http.StatusInternalServerError:
+		return zerolog.ErrorLevel
+	case status >= http.StatusBadRequest:
+		return zerolog.WarnLevel
+	default:
+		return zerolog.InfoLevel
+	}
+}
+
 // FnShouldLog given a request, return flags that control logging.
 // logRequest will disable the entire request logging middleware, default is true.
 // logRequestBody will log the body of the request, default is false.
 // logResponseBody will log the body of the response, default is false.  This should be disabled for large or streaming
 // results.
-type FnShouldLog func(r *http.Request) (logRequest, logRequestBody, logResponseBody bool)
+type FnShouldLog func(r *http.Request) (logRequest, logRequestBody, logResponseBody bool, toLogLevel FnToLogLevel)
 
-func LogRequestBody(_ *http.Request) (bool, bool, bool) { return true, true, false }
+func LogRequestBody(_ *http.Request) (bool, bool, bool, FnToLogLevel) {
+	return true, true, false, StatusToLogLevel
+}
 
-func LogAll(_ *http.Request) (bool, bool, bool) { return true, true, true }
+func LogAll(_ *http.Request) (bool, bool, bool, FnToLogLevel) {
+	return true, true, true, StatusToLogLevel
+}
 
 // RequestLogger logs optional data, as specified by the shouldLog func.
 // NOTE: The zerolog context logger MUST be initialized prior to this handler invocation.   This is generally done by
@@ -59,9 +76,10 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 
 			var logRequest, logRequestBody, logResponse bool
 			logRequest = true
+			toLogLevel := StatusToLogLevel
 
 			if shouldLog != nil {
-				logRequest, logRequestBody, logResponse = shouldLog(r)
+				logRequest, logRequestBody, logResponse, toLogLevel = shouldLog(r)
 			}
 
 			requestID := r.Header.Get(httputil.RequestIDHeader)
@@ -106,30 +124,15 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 
 			status := wrappedWriter.Status()
 
-			l := zerolog.Ctx(r.Context()).With().
+			if logResponse {
+				logctx.AddBytesToContext(r.Context(), Response, responseBuffer.Bytes(), MaxBodyLog)
+			}
+
+			zerolog.Ctx(r.Context()).WithLevel(toLogLevel(r, status)).
 				Ctx(r.Context()).
 				Int(HTTPStatusCode, status).
 				Int(NetworkBytesWritten, wrappedWriter.BytesWritten()).
-				Dur(Duration, now().Sub(start))
-
-			if logResponse {
-				l = logctx.AddBytes(l, Response, responseBuffer.Bytes(), MaxBodyLog)
-			}
-
-			logger := l.Logger()
-
-			var event *zerolog.Event
-
-			switch {
-			case status >= http.StatusInternalServerError:
-				event = logger.Error()
-			case status >= http.StatusBadRequest:
-				event = logger.Warn()
-			default:
-				event = logger.Info()
-			}
-
-			event.Msgf("%d %s %s", status, r.Method, r.URL)
+				Dur(Duration, now().Sub(start)).Msgf("%d %s %s", status, r.Method, r.URL)
 		})
 	}
 }
