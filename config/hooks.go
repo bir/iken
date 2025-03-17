@@ -6,9 +6,10 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+	"strings"
 	"time"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/spf13/cast"
 )
 
@@ -126,6 +127,31 @@ func StringToRegexFunc(f reflect.Type, t reflect.Type, data any) (any, error) {
 	return out, nil
 }
 
+// StringToSliceHookFunc returns a DecodeHookFunc that converts
+// string to []string by splitting on the given sep.
+func StringToSliceHookFunc(sep string) mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{},
+	) (interface{}, error) {
+		if f.Kind() != reflect.String {
+			return data, nil
+		}
+
+		if t.Kind() != reflect.Slice {
+			return data, nil
+		}
+
+		raw, ok := data.(string)
+		if !ok || raw == "" {
+			return []string{}, nil
+		}
+
+		return strings.Split(raw, sep), nil
+	}
+}
+
 func defaultDecoderConfig(c *mapstructure.DecoderConfig) {
 	c.TagName = TagName
 	c.DecodeHook = mapstructure.ComposeDecodeHookFunc(
@@ -135,5 +161,6 @@ func defaultDecoderConfig(c *mapstructure.DecoderConfig) {
 		StringToTimeFunc,
 		StringToRegexFunc,
 		mapstructure.StringToTimeDurationHookFunc(),
-		mapstructure.StringToSliceHookFunc(","))
+		StringToSliceHookFunc(","),
+	)
 }
