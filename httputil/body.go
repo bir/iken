@@ -15,7 +15,7 @@ func GetJSONBody(r io.Reader, body any) error {
 		return ErrMissingBody
 	}
 
-	err := json.NewDecoder(r).Decode(&body)
+	err := json.NewDecoder(r).Decode(body)
 	if err == nil {
 		return nil
 	}

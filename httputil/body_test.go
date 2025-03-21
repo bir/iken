@@ -47,6 +47,14 @@ func strP(s string) *string {
 	return &s
 }
 
+type BadIOReader struct {
+	err error
+}
+
+func (r *BadIOReader) Read(p []byte) (n int, err error) {
+	return 0, r.err
+}
+
 func TestGetJSONBody(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -57,8 +65,11 @@ func TestGetJSONBody(t *testing.T) {
 	}{
 		{"no body", nil, nil, nil, true},
 		{"string", bytes.NewBufferString(`"foo"`), strP(""), strP("foo"), false},
-		{"invalid json", bytes.NewBufferString(`{"foo"`), "", "", true},
-		{"empty", bytes.NewBufferString(``), "", "", true},
+		{"invalid json", bytes.NewBufferString(`{"foo"`), strP(""), strP(""), true},
+		{"empty", bytes.NewBufferString(``), strP(""), strP(""), true},
+		{"EOF", &BadIOReader{io.EOF}, strP(""), strP(""), true},
+		{"read error", &BadIOReader{io.ErrClosedPipe}, strP(""), strP(""), true},
+		{"null body", bytes.NewBufferString(`null`), &TestObject{}, &TestObject{}, true},
 		{"validation error - bad ID type", bytes.NewBufferString(`{"ID":1}`), &TestObject{}, &TestObject{}, true},
 		{"validations error - no ID", bytes.NewBufferString(`{}`), &TestObject{}, &TestObject{}, true},
 		{"good", bytes.NewBufferString(`{"ID":"1"}`), &TestObject{}, &TestObject{ID: "1"}, false},
@@ -66,7 +77,9 @@ func TestGetJSONBody(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := GetJSONBody(tt.r, tt.body)
-			if !tt.wantErr {
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
 				require.NoError(t, err)
 			}
 
