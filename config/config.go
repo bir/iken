@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -18,7 +19,7 @@ var (
 	// File specifies the ConfigFile used by viper.  If the file does not exist then no error is raised.
 	File = ".env"
 	// Resolvers allow custom resolution for type mappings.  See Resolver for more info.
-	Resolvers = ResolverMap{"pg": PgDBResolver}
+	Resolvers = ResolverMap{"pg": PgDBResolver, "json": JSONResolver}
 	// ErrInvalidConfigObject is returned when a nil pointer, or non-pointer is provided to Load.
 	ErrInvalidConfigObject = errors.New("config must be a pointer type")
 	// ErrInvalidResolver is returned when a struct tag references a resolver that is not found.
@@ -29,7 +30,7 @@ var (
 
 // Resolver is used to map a key to a value.  Examples are custom serialization used for Postgres Connection URL
 // composition, see PgDBResolver for example.
-type Resolver func(key string) (any, error)
+type Resolver func(field reflect.StructField, key string) (any, bool, error)
 
 // ResolverMap maintains the map of resolver names to Resolver funcs.
 type ResolverMap = map[string]Resolver
@@ -52,7 +53,7 @@ const (
 //		    Port      int    `env:"PORT, 3000"`
 //		    DB        string `env:"DB,localhost,pg"`
 //	   }
-func parseTag(tag string) error {
+func parseTag(field reflect.StructField, tag string) error {
 	args := strings.Split(tag, ",")
 
 	key := strings.TrimSpace(args[keyPos])
@@ -85,12 +86,14 @@ func parseTag(tag string) error {
 			return fmt.Errorf("%w: `%v` for field `%v`", ErrInvalidResolver, resolver, key)
 		}
 
-		val, err := f(key)
+		val, ok, err := f(field, key)
 		if err != nil {
 			return err
 		}
 
-		viper.Set(key, val)
+		if ok {
+			viper.Set(key, val)
+		}
 	}
 
 	return nil
@@ -124,7 +127,7 @@ func Load(cfg any) error {
 			continue
 		}
 
-		if err = parseTag(tag); err != nil {
+		if err = parseTag(f, tag); err != nil {
 			return fmt.Errorf("error parsing %s tag on field %s: %w", TagName, f.Name, err)
 		}
 	}
@@ -135,4 +138,20 @@ func Load(cfg any) error {
 	}
 
 	return nil
+}
+
+func JSONResolver(field reflect.StructField, key string) (any, bool, error) {
+	out := reflect.New(field.Type)
+
+	s := viper.GetString(key)
+	if s == "" {
+		return nil, false, nil
+	}
+
+	err := json.Unmarshal([]byte(s), out.Interface())
+	if err != nil {
+		return nil, false, fmt.Errorf("error unmarshalling json from env %q value %q: %w", key, s, err)
+	}
+
+	return out.Elem().Interface(), true, nil
 }

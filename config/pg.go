@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -12,8 +13,10 @@ import (
 var ApplicationName string
 
 // PgDBResolver is a wrapper to the GetPgDBString that adheres to the Resolver interface.
-func PgDBResolver(key string) (any, error) {
-	return GetPgDBString(key), nil
+func PgDBResolver(_ reflect.StructField, key string) (any, bool, error) {
+	value := GetPgDBString(key)
+
+	return value, value != "", nil
 }
 
 func appendIf(aa []string, key, value string) []string {

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"testing"
 	"time"
@@ -30,8 +31,8 @@ type InvalidConfig struct {
 	BadTag string `env:","`
 }
 
-func ErrResolver(_ string) (any, error) {
-	return nil, errors.New("BAD")
+func ErrResolver(_ reflect.StructField, _ string) (any, bool, error) {
+	return nil, false, errors.New("BAD")
 }
 
 func TestSetup(t *testing.T) {
@@ -95,10 +96,16 @@ func TestSetup(t *testing.T) {
 	}
 }
 
+type JSONObject struct {
+	ID  string   `json:"id,omitempty"`
+	IDs []string `json:"ids,omitempty"`
+}
+
 type ComplexConfig struct {
 	TestMap  map[string]string `env:"TEST_MAP"`
 	Time     time.Time         `env:"TIME"`
 	Patterns []regexp.Regexp   `json:",omitempty" env:"PATTERNS"`
+	Nested   []JSONObject      `json:",omitempty,omitzero" env:"NESTED,,json"`
 }
 
 func TestComplex(t *testing.T) {
@@ -115,9 +122,10 @@ func TestComplex(t *testing.T) {
 	}{
 		{"defaults", nil, &ComplexConfig{}, nil, `{"TestMap":{"one":"1","two":"2"},"Time":"2021-01-01T00:00:00Z"}`, false},
 		{"EmptyEnv", func() { config.File = ".envEMPTY" }, &ComplexConfig{}, nil, `{"TestMap":null,"Time":"0001-01-01T00:00:00Z"}`, false},
-		{"Complex", func() { config.File = ".envCOMPLEX" }, &ComplexConfig{}, nil, `{"TestMap":{"one":"1","two":"2"},"Time":"2022-01-01T00:00:00Z","Patterns":["123","asdf","https://a.b/c","^http:*"]}`, false},
+		{"Complex", func() { config.File = ".envCOMPLEX" }, &ComplexConfig{}, nil, `{"TestMap":{"one":"1","two":"2"},"Time":"2022-01-01T00:00:00Z","Patterns":["123","asdf","https://a.b/c","^http:*"],"Nested":[{"id":"test","ids":["1","2"]}]}`, false},
 		{"BadTime", func() { config.File = ".envBADTIME" }, &ComplexConfig{}, nil, `{"TestMap":null,"Time":"0001-01-01T00:00:00Z"}`, true},
 		{"BadMap", nil, &ComplexConfig{}, map[string]string{"TEST_MAP": "FOO"}, `{"TestMap":{},"Time":"2021-01-01T00:00:00Z"}`, false},
+		{"BadJson", func() { config.File = ".envBADJSON" }, &ComplexConfig{}, nil, `{"TestMap":null,"Time":"0001-01-01T00:00:00Z"}`, true},
 	}
 
 	for _, tt := range tests {
