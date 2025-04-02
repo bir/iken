@@ -451,7 +451,7 @@ func GetInt32Array(r *http.Request, name string, required bool) ([]int32, bool, 
 	return convertInt32Array(pp)
 }
 
-func GetInt32ArraPath(r *http.Request, name string, required bool) ([]int32, bool, error) {
+func GetInt32ArrayPath(r *http.Request, name string, required bool) ([]int32, bool, error) {
 	pp, ok, err := GetStringArrayPath(r, name, required)
 	if err != nil || len(pp) == 0 || !ok {
 		return nil, false, err
