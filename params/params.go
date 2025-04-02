@@ -11,19 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	ErrNotFound           = errors.New("not found")
-	ErrUnknownParamSource = errors.New("param source unknown")
-)
-
-type ParamSource int
-
-const (
-	ParamPath ParamSource = iota
-	ParamQuery
-	ParamHeader
-	ParamCookie
-)
+var ErrNotFound = errors.New("not found")
 
 func GetString(r *http.Request, name string, required bool) (string, bool, error) {
 	param := r.PathValue(name)
@@ -44,31 +32,45 @@ func GetString(r *http.Request, name string, required bool) (string, bool, error
 	return param, param != "", nil
 }
 
-func GetStringFrom(r *http.Request, name string, source ParamSource, required bool) (string, bool, error) {
-	var param string
-
-	switch source {
-	case ParamPath:
-		param = r.PathValue(name)
-	case ParamQuery:
-		param = r.URL.Query().Get(name)
-	case ParamHeader:
-		param = r.Header.Get(name)
-	case ParamCookie:
-		cookie, err := r.Cookie(name)
-		// only error is cookie not found, so leave param blank in that case.
-		if err == nil && cookie != nil {
-			param = cookie.Value
-		}
-	default:
-		return "", false, fmt.Errorf("%d: %w", source, ErrUnknownParamSource)
-	}
-
+func GetStringPath(r *http.Request, name string, required bool) (string, bool, error) {
+	param := r.PathValue(name)
 	if required && len(param) == 0 {
 		return "", false, fmt.Errorf("%s: %w", name, ErrNotFound)
 	}
 
 	return param, param != "", nil
+}
+
+func GetStringQuery(r *http.Request, name string, required bool) (string, bool, error) {
+	param := r.URL.Query().Get(name)
+	if required && len(param) == 0 {
+		return "", false, fmt.Errorf("%s: %w", name, ErrNotFound)
+	}
+
+	return param, param != "", nil
+}
+
+func GetStringHeader(r *http.Request, name string, required bool) (string, bool, error) {
+	param := r.Header.Get(name)
+	if required && len(param) == 0 {
+		return "", false, fmt.Errorf("%s: %w", name, ErrNotFound)
+	}
+
+	return param, param != "", nil
+}
+
+func GetStringCookie(r *http.Request, name string, required bool) (string, bool, error) {
+	cookie, err := r.Cookie(name)
+	if err == nil && cookie != nil {
+		// Return found even if cookie is empty, because it _is_ present!
+		return cookie.Value, true, nil
+	}
+
+	if required {
+		return "", false, fmt.Errorf("%s: %w", name, ErrNotFound)
+	}
+
+	return "", false, nil
 }
 
 func GetInt32(r *http.Request, name string, required bool) (int32, bool, error) {
@@ -80,8 +82,35 @@ func GetInt32(r *http.Request, name string, required bool) (int32, bool, error) 
 	return convertInt32(s)
 }
 
-func GetInt32From(r *http.Request, name string, source ParamSource, required bool) (int32, bool, error) {
-	s, ok, err := GetStringFrom(r, name, source, required)
+func GetInt32Path(r *http.Request, name string, required bool) (int32, bool, error) {
+	s, ok, err := GetStringPath(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return 0, false, err
+	}
+
+	return convertInt32(s)
+}
+
+func GetInt32Query(r *http.Request, name string, required bool) (int32, bool, error) {
+	s, ok, err := GetStringQuery(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return 0, false, err
+	}
+
+	return convertInt32(s)
+}
+
+func GetInt32Header(r *http.Request, name string, required bool) (int32, bool, error) {
+	s, ok, err := GetStringHeader(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return 0, false, err
+	}
+
+	return convertInt32(s)
+}
+
+func GetInt32Cookie(r *http.Request, name string, required bool) (int32, bool, error) {
+	s, ok, err := GetStringCookie(r, name, required)
 	if err != nil || len(s) == 0 || !ok {
 		return 0, false, err
 	}
@@ -107,8 +136,35 @@ func GetInt64(r *http.Request, name string, required bool) (int64, bool, error) 
 	return convertInt64(s)
 }
 
-func GetInt64From(r *http.Request, name string, source ParamSource, required bool) (int64, bool, error) {
-	s, ok, err := GetStringFrom(r, name, source, required)
+func GetInt64Path(r *http.Request, name string, required bool) (int64, bool, error) {
+	s, ok, err := GetStringPath(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return 0, false, err
+	}
+
+	return convertInt64(s)
+}
+
+func GetInt64Query(r *http.Request, name string, required bool) (int64, bool, error) {
+	s, ok, err := GetStringQuery(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return 0, false, err
+	}
+
+	return convertInt64(s)
+}
+
+func GetInt64Header(r *http.Request, name string, required bool) (int64, bool, error) {
+	s, ok, err := GetStringHeader(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return 0, false, err
+	}
+
+	return convertInt64(s)
+}
+
+func GetInt64Cookie(r *http.Request, name string, required bool) (int64, bool, error) {
+	s, ok, err := GetStringCookie(r, name, required)
 	if err != nil || len(s) == 0 || !ok {
 		return 0, false, err
 	}
@@ -134,8 +190,35 @@ func GetBool(r *http.Request, name string, required bool) (bool, bool, error) {
 	return convertBool(s)
 }
 
-func GetBoolFrom(r *http.Request, name string, source ParamSource, required bool) (bool, bool, error) {
-	s, ok, err := GetStringFrom(r, name, source, required)
+func GetBoolPath(r *http.Request, name string, required bool) (bool, bool, error) {
+	s, ok, err := GetStringPath(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return false, false, err
+	}
+
+	return convertBool(s)
+}
+
+func GetBoolQuery(r *http.Request, name string, required bool) (bool, bool, error) {
+	s, ok, err := GetStringQuery(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return false, false, err
+	}
+
+	return convertBool(s)
+}
+
+func GetBoolHeader(r *http.Request, name string, required bool) (bool, bool, error) {
+	s, ok, err := GetStringHeader(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return false, false, err
+	}
+
+	return convertBool(s)
+}
+
+func GetBoolCookie(r *http.Request, name string, required bool) (bool, bool, error) {
+	s, ok, err := GetStringCookie(r, name, required)
 	if err != nil || len(s) == 0 || !ok {
 		return false, false, err
 	}
@@ -161,8 +244,35 @@ func GetInt(r *http.Request, name string, required bool) (int, bool, error) {
 	return convertInt(s)
 }
 
-func GetIntFrom(r *http.Request, name string, source ParamSource, required bool) (int, bool, error) {
-	s, ok, err := GetStringFrom(r, name, source, required)
+func GetIntPath(r *http.Request, name string, required bool) (int, bool, error) {
+	s, ok, err := GetStringPath(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return 0, false, err
+	}
+
+	return convertInt(s)
+}
+
+func GetIntQuery(r *http.Request, name string, required bool) (int, bool, error) {
+	s, ok, err := GetStringQuery(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return 0, false, err
+	}
+
+	return convertInt(s)
+}
+
+func GetIntHeader(r *http.Request, name string, required bool) (int, bool, error) {
+	s, ok, err := GetStringHeader(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return 0, false, err
+	}
+
+	return convertInt(s)
+}
+
+func GetIntCookie(r *http.Request, name string, required bool) (int, bool, error) {
+	s, ok, err := GetStringCookie(r, name, required)
 	if err != nil || len(s) == 0 || !ok {
 		return 0, false, err
 	}
@@ -188,8 +298,35 @@ func GetTime(r *http.Request, name string, required bool) (time.Time, bool, erro
 	return convertTime(s)
 }
 
-func GetTimeFrom(r *http.Request, name string, source ParamSource, required bool) (time.Time, bool, error) {
-	s, ok, err := GetStringFrom(r, name, source, required)
+func GetTimePath(r *http.Request, name string, required bool) (time.Time, bool, error) {
+	s, ok, err := GetStringPath(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return time.Time{}, false, err
+	}
+
+	return convertTime(s)
+}
+
+func GetTimeQuery(r *http.Request, name string, required bool) (time.Time, bool, error) {
+	s, ok, err := GetStringQuery(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return time.Time{}, false, err
+	}
+
+	return convertTime(s)
+}
+
+func GetTimeHeader(r *http.Request, name string, required bool) (time.Time, bool, error) {
+	s, ok, err := GetStringHeader(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return time.Time{}, false, err
+	}
+
+	return convertTime(s)
+}
+
+func GetTimeCookie(r *http.Request, name string, required bool) (time.Time, bool, error) {
+	s, ok, err := GetStringCookie(r, name, required)
 	if err != nil || len(s) == 0 || !ok {
 		return time.Time{}, false, err
 	}
@@ -215,8 +352,35 @@ func GetUUID(r *http.Request, name string, required bool) (uuid.UUID, bool, erro
 	return convertUUID(s)
 }
 
-func GetUUIDFrom(r *http.Request, name string, source ParamSource, required bool) (uuid.UUID, bool, error) {
-	s, ok, err := GetStringFrom(r, name, source, required)
+func GetUUIDPath(r *http.Request, name string, required bool) (uuid.UUID, bool, error) {
+	s, ok, err := GetStringPath(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return uuid.UUID{}, false, err
+	}
+
+	return convertUUID(s)
+}
+
+func GetUUIDQuery(r *http.Request, name string, required bool) (uuid.UUID, bool, error) {
+	s, ok, err := GetStringQuery(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return uuid.UUID{}, false, err
+	}
+
+	return convertUUID(s)
+}
+
+func GetUUIDHeader(r *http.Request, name string, required bool) (uuid.UUID, bool, error) {
+	s, ok, err := GetStringHeader(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return uuid.UUID{}, false, err
+	}
+
+	return convertUUID(s)
+}
+
+func GetUUIDCookie(r *http.Request, name string, required bool) (uuid.UUID, bool, error) {
+	s, ok, err := GetStringCookie(r, name, required)
 	if err != nil || len(s) == 0 || !ok {
 		return uuid.UUID{}, false, err
 	}
@@ -242,8 +406,35 @@ func GetStringArray(r *http.Request, name string, required bool) ([]string, bool
 	return strings.Split(s, ","), true, nil
 }
 
-func GetStringArrayFrom(r *http.Request, name string, source ParamSource, required bool) ([]string, bool, error) {
-	s, ok, err := GetStringFrom(r, name, source, required)
+func GetStringArrayPath(r *http.Request, name string, required bool) ([]string, bool, error) {
+	s, ok, err := GetStringPath(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return nil, false, err
+	}
+
+	return strings.Split(s, ","), true, nil
+}
+
+func GetStringArrayQuery(r *http.Request, name string, required bool) ([]string, bool, error) {
+	s, ok, err := GetStringQuery(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return nil, false, err
+	}
+
+	return strings.Split(s, ","), true, nil
+}
+
+func GetStringArrayHeader(r *http.Request, name string, required bool) ([]string, bool, error) {
+	s, ok, err := GetStringHeader(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return nil, false, err
+	}
+
+	return strings.Split(s, ","), true, nil
+}
+
+func GetStringArrayCookie(r *http.Request, name string, required bool) ([]string, bool, error) {
+	s, ok, err := GetStringCookie(r, name, required)
 	if err != nil || len(s) == 0 || !ok {
 		return nil, false, err
 	}
@@ -260,8 +451,35 @@ func GetInt32Array(r *http.Request, name string, required bool) ([]int32, bool, 
 	return convertInt32Array(pp)
 }
 
-func GetInt32ArrayFrom(r *http.Request, name string, source ParamSource, required bool) ([]int32, bool, error) {
-	pp, ok, err := GetStringArrayFrom(r, name, source, required)
+func GetInt32ArraPath(r *http.Request, name string, required bool) ([]int32, bool, error) {
+	pp, ok, err := GetStringArrayPath(r, name, required)
+	if err != nil || len(pp) == 0 || !ok {
+		return nil, false, err
+	}
+
+	return convertInt32Array(pp)
+}
+
+func GetInt32ArrayQuery(r *http.Request, name string, required bool) ([]int32, bool, error) {
+	pp, ok, err := GetStringArrayQuery(r, name, required)
+	if err != nil || len(pp) == 0 || !ok {
+		return nil, false, err
+	}
+
+	return convertInt32Array(pp)
+}
+
+func GetInt32ArrayHeader(r *http.Request, name string, required bool) ([]int32, bool, error) {
+	pp, ok, err := GetStringArrayHeader(r, name, required)
+	if err != nil || len(pp) == 0 || !ok {
+		return nil, false, err
+	}
+
+	return convertInt32Array(pp)
+}
+
+func GetInt32ArrayCookie(r *http.Request, name string, required bool) ([]int32, bool, error) {
+	pp, ok, err := GetStringArrayCookie(r, name, required)
 	if err != nil || len(pp) == 0 || !ok {
 		return nil, false, err
 	}
@@ -295,12 +513,43 @@ func GetEnum[T comparable](r *http.Request, name string, required bool, parser f
 	return parser(s), true, nil
 }
 
-func GetEnumFrom[T comparable](
-	r *http.Request, name string, source ParamSource, required bool, parser func(string) T,
-) (T, bool, error) {
+func GetEnumPath[T comparable](r *http.Request, name string, required bool, parser func(string) T) (T, bool, error) {
 	var out T
 
-	s, ok, err := GetStringFrom(r, name, source, required)
+	s, ok, err := GetStringPath(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return out, false, err
+	}
+
+	return parser(s), true, nil
+}
+
+func GetEnumQuery[T comparable](r *http.Request, name string, required bool, parser func(string) T) (T, bool, error) {
+	var out T
+
+	s, ok, err := GetStringQuery(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return out, false, err
+	}
+
+	return parser(s), true, nil
+}
+
+func GetEnumHeader[T comparable](r *http.Request, name string, required bool, parser func(string) T) (T, bool, error) {
+	var out T
+
+	s, ok, err := GetStringHeader(r, name, required)
+	if err != nil || len(s) == 0 || !ok {
+		return out, false, err
+	}
+
+	return parser(s), true, nil
+}
+
+func GetEnumCookie[T comparable](r *http.Request, name string, required bool, parser func(string) T) (T, bool, error) {
+	var out T
+
+	s, ok, err := GetStringCookie(r, name, required)
 	if err != nil || len(s) == 0 || !ok {
 		return out, false, err
 	}
@@ -325,10 +574,61 @@ func GetEnumArray[T comparable](
 	return out, true, nil
 }
 
-func GetEnumArrayFrom[T comparable](
-	r *http.Request, name string, source ParamSource, required bool, parser func(string) T,
+func GetEnumArrayPath[T comparable](
+	r *http.Request, name string, required bool, parser func(string) T,
 ) ([]T, bool, error) {
-	pp, ok, err := GetStringArrayFrom(r, name, source, required)
+	pp, ok, err := GetStringArrayPath(r, name, required)
+	if err != nil || len(pp) == 0 || !ok {
+		return nil, false, err
+	}
+
+	out := make([]T, len(pp))
+
+	for i, p := range pp {
+		out[i] = parser(p)
+	}
+
+	return out, true, nil
+}
+
+func GetEnumArrayQuery[T comparable](
+	r *http.Request, name string, required bool, parser func(string) T,
+) ([]T, bool, error) {
+	pp, ok, err := GetStringArrayQuery(r, name, required)
+	if err != nil || len(pp) == 0 || !ok {
+		return nil, false, err
+	}
+
+	out := make([]T, len(pp))
+
+	for i, p := range pp {
+		out[i] = parser(p)
+	}
+
+	return out, true, nil
+}
+
+func GetEnumArrayHeader[T comparable](
+	r *http.Request, name string, required bool, parser func(string) T,
+) ([]T, bool, error) {
+	pp, ok, err := GetStringArrayHeader(r, name, required)
+	if err != nil || len(pp) == 0 || !ok {
+		return nil, false, err
+	}
+
+	out := make([]T, len(pp))
+
+	for i, p := range pp {
+		out[i] = parser(p)
+	}
+
+	return out, true, nil
+}
+
+func GetEnumArrayCookie[T comparable](
+	r *http.Request, name string, required bool, parser func(string) T,
+) ([]T, bool, error) {
+	pp, ok, err := GetStringArrayCookie(r, name, required)
 	if err != nil || len(pp) == 0 || !ok {
 		return nil, false, err
 	}

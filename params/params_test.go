@@ -339,27 +339,29 @@ func TestGetStringFrom(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		r        *http.Request
-		param    string
-		source   ParamSource
+		name  string
+		r     *http.Request
+		param string
+
+		method func(r *http.Request, name string, required bool) (string, bool, error)
+
 		required bool
 		want     string
 		wantErr  bool
 		wantOk   bool
 	}{
-		{" header required present", newHeaderRequest("foo", "123"), "foo", ParamHeader, true, "123", false, true},
-		{" header required missing", newHeaderRequest("", ""), "foo", ParamHeader, true, "", true, false},
-		{" header not required present", newHeaderRequest("foo", "123"), "foo", ParamHeader, false, "123", false, true},
-		{" header not required missing", newHeaderRequest("", ""), "foo", ParamHeader, false, "", false, false},
-		{" fetch header specifically", newMultiSourceRequest("foo"), "foo", ParamHeader, false, "headerval", false, true},
-		{" fetch query specifically", newMultiSourceRequest("foo"), "foo", ParamQuery, false, "queryval", false, true},
-		{" fetch cookie specifically", newMultiSourceRequest("foo"), "foo", ParamCookie, false, "cookieval", false, true},
-		{" fetch cookie specifically", newMultiSourceRequest("foo"), "foo", ParamPath, false, "pathval", false, true},
+		{" header required present", newHeaderRequest("foo", "123"), "foo", GetStringHeader, true, "123", false, true},
+		{" header required missing", newHeaderRequest("", ""), "foo", GetStringHeader, true, "", true, false},
+		{" header not required present", newHeaderRequest("foo", "123"), "foo", GetStringHeader, false, "123", false, true},
+		{" header not required missing", newHeaderRequest("", ""), "foo", GetStringHeader, false, "", false, false},
+		{" fetch header specifically", newMultiSourceRequest("foo"), "foo", GetStringHeader, false, "headerval", false, true},
+		{" fetch query specifically", newMultiSourceRequest("foo"), "foo", GetStringQuery, false, "queryval", false, true},
+		{" fetch cookie specifically", newMultiSourceRequest("foo"), "foo", GetStringCookie, false, "cookieval", false, true},
+		{" fetch path specifically", newMultiSourceRequest("foo"), "foo", GetStringPath, false, "pathval", false, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok, err := GetStringFrom(tt.r, tt.param, tt.source, tt.required)
+			got, ok, err := tt.method(tt.r, tt.param, tt.required)
 
 			assert.Equal(t, tt.wantErr, err != nil, "error")
 			assert.Equal(t, tt.want, got, "value")
@@ -370,23 +372,25 @@ func TestGetStringFrom(t *testing.T) {
 
 func TestGetInt32From(t *testing.T) {
 	tests := []struct {
-		name     string
-		r        *http.Request
-		param    string
-		source   ParamSource
+		name  string
+		r     *http.Request
+		param string
+
+		method func(r *http.Request, name string, required bool) (int32, bool, error)
+
 		required bool
 		want     int32
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", ParamQuery, true, 123, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", ParamQuery, true, 0, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", ParamQuery, false, 0, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", ParamQuery, true, 0, true, false},
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", GetInt32Query, true, 123, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", GetInt32Query, true, 0, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", GetInt32Query, false, 0, false, false},
+		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", GetInt32Query, true, 0, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok, err := GetInt32From(tt.r, tt.param, tt.source, tt.required)
+			got, ok, err := tt.method(tt.r, tt.param, tt.required)
 
 			assert.Equal(t, tt.wantErr, err != nil, "error")
 			assert.Equal(t, tt.want, got, "value")
@@ -397,25 +401,27 @@ func TestGetInt32From(t *testing.T) {
 
 func TestGetIntFrom(t *testing.T) {
 	tests := []struct {
-		name     string
-		r        *http.Request
-		param    string
-		source   ParamSource
+		name  string
+		r     *http.Request
+		param string
+
+		method func(r *http.Request, name string, required bool) (int, bool, error)
+
 		required bool
 		want     int
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", ParamQuery, true, 123, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", ParamQuery, true, 0, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", ParamQuery, false, 0, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", ParamQuery, true, 0, true, false},
-		{"max", httptest.NewRequest("GET", "/BAR?foo=9223372036854775807", nil), "foo", ParamQuery, true, 9223372036854775807, false, true},
-		{"over max", httptest.NewRequest("GET", "/BAR?foo=19223372036854775807", nil), "foo", ParamQuery, true, 0, true, false},
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", GetIntQuery, true, 123, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", GetIntQuery, true, 0, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", GetIntQuery, false, 0, false, false},
+		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", GetIntQuery, true, 0, true, false},
+		{"max", httptest.NewRequest("GET", "/BAR?foo=9223372036854775807", nil), "foo", GetIntQuery, true, 9223372036854775807, false, true},
+		{"over max", httptest.NewRequest("GET", "/BAR?foo=19223372036854775807", nil), "foo", GetIntQuery, true, 0, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok, err := GetIntFrom(tt.r, tt.param, tt.source, tt.required)
+			got, ok, err := tt.method(tt.r, tt.param, tt.required)
 
 			assert.Equal(t, tt.wantErr, err != nil, "error")
 			assert.Equal(t, tt.want, got, "value")
@@ -426,25 +432,27 @@ func TestGetIntFrom(t *testing.T) {
 
 func TestGetInt64From(t *testing.T) {
 	tests := []struct {
-		name     string
-		r        *http.Request
-		param    string
-		source   ParamSource
+		name  string
+		r     *http.Request
+		param string
+
+		method func(r *http.Request, name string, required bool) (int64, bool, error)
+
 		required bool
 		want     int64
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", ParamQuery, true, 123, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", ParamQuery, true, 0, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", ParamQuery, false, 0, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", ParamQuery, true, 0, true, false},
-		{"max", httptest.NewRequest("GET", "/BAR?foo=9223372036854775807", nil), "foo", ParamQuery, true, 9223372036854775807, false, true},
-		{"over max", httptest.NewRequest("GET", "/BAR?foo=19223372036854775807", nil), "foo", ParamQuery, true, 0, true, false},
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", GetInt64Query, true, 123, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", GetInt64Query, true, 0, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", GetInt64Query, false, 0, false, false},
+		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", GetInt64Query, true, 0, true, false},
+		{"max", httptest.NewRequest("GET", "/BAR?foo=9223372036854775807", nil), "foo", GetInt64Query, true, 9223372036854775807, false, true},
+		{"over max", httptest.NewRequest("GET", "/BAR?foo=19223372036854775807", nil), "foo", GetInt64Query, true, 0, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok, err := GetInt64From(tt.r, tt.param, tt.source, tt.required)
+			got, ok, err := tt.method(tt.r, tt.param, tt.required)
 
 			assert.Equal(t, tt.wantErr, err != nil, "error")
 			assert.Equal(t, tt.want, got, "value")
@@ -455,23 +463,25 @@ func TestGetInt64From(t *testing.T) {
 
 func TestGetBoolFrom(t *testing.T) {
 	tests := []struct {
-		name     string
-		r        *http.Request
-		param    string
-		source   ParamSource
+		name  string
+		r     *http.Request
+		param string
+
+		method func(r *http.Request, name string, required bool) (bool, bool, error)
+
 		required bool
 		want     bool
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=true", nil), "foo", ParamQuery, true, true, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", ParamQuery, true, false, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", ParamQuery, false, false, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", ParamQuery, true, false, true, false},
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=true", nil), "foo", GetBoolQuery, true, true, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", GetBoolQuery, true, false, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", GetBoolQuery, false, false, false, false},
+		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", GetBoolQuery, true, false, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok, err := GetBoolFrom(tt.r, tt.param, tt.source, tt.required)
+			got, ok, err := tt.method(tt.r, tt.param, tt.required)
 
 			assert.Equal(t, tt.wantErr, err != nil, "error")
 			assert.Equal(t, tt.want, got, "value")
@@ -482,24 +492,26 @@ func TestGetBoolFrom(t *testing.T) {
 
 func TestGetInt32ArrayFrom(t *testing.T) {
 	tests := []struct {
-		name     string
-		r        *http.Request
-		param    string
-		source   ParamSource
+		name  string
+		r     *http.Request
+		param string
+
+		method func(r *http.Request, name string, required bool) ([]int32, bool, error)
+
 		required bool
 		want     []int32
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", ParamQuery, true, []int32{123}, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", ParamQuery, true, nil, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", ParamQuery, false, nil, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", ParamQuery, true, nil, true, false},
-		{"large", httptest.NewRequest("GET", "/BAR?foo=1,2,3,4", nil), "foo", ParamQuery, true, []int32{1, 2, 3, 4}, false, true},
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", GetInt32ArrayQuery, true, []int32{123}, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", GetInt32ArrayQuery, true, nil, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", GetInt32ArrayQuery, false, nil, false, false},
+		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", GetInt32ArrayQuery, true, nil, true, false},
+		{"large", httptest.NewRequest("GET", "/BAR?foo=1,2,3,4", nil), "foo", GetInt32ArrayQuery, true, []int32{1, 2, 3, 4}, false, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok, err := GetInt32ArrayFrom(tt.r, tt.param, tt.source, tt.required)
+			got, ok, err := tt.method(tt.r, tt.param, tt.required)
 
 			assert.Equal(t, tt.wantErr, err != nil, "error")
 			assert.Equal(t, tt.want, got, "value")
@@ -510,23 +522,25 @@ func TestGetInt32ArrayFrom(t *testing.T) {
 
 func TestGetTimeFrom(t *testing.T) {
 	tests := []struct {
-		name     string
-		r        *http.Request
-		param    string
-		source   ParamSource
+		name  string
+		r     *http.Request
+		param string
+
+		method func(r *http.Request, name string, required bool) (time.Time, bool, error)
+
 		required bool
 		want     time.Time
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=2006-01-02T15:04:05Z", nil), "foo", ParamQuery, true, time.Date(2006, 0o1, 0o2, 15, 4, 5, 0, time.UTC), false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", ParamQuery, true, time.Time{}, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", ParamQuery, false, time.Time{}, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=200601021504050700", nil), "foo", ParamQuery, true, time.Time{}, true, false},
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=2006-01-02T15:04:05Z", nil), "foo", GetTimeQuery, true, time.Date(2006, 0o1, 0o2, 15, 4, 5, 0, time.UTC), false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", GetTimeQuery, true, time.Time{}, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", GetTimeQuery, false, time.Time{}, false, false},
+		{"bad format", httptest.NewRequest("GET", "/BAR?foo=200601021504050700", nil), "foo", GetTimeQuery, true, time.Time{}, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok, err := GetTimeFrom(tt.r, tt.param, tt.source, tt.required)
+			got, ok, err := tt.method(tt.r, tt.param, tt.required)
 
 			assert.Equal(t, tt.wantErr, err != nil, "error")
 			assert.Equal(t, tt.want, got, "value")
@@ -539,23 +553,25 @@ func TestGetUUIDFrom(t *testing.T) {
 	testUUID, _ := uuid.Parse("48ab873f-d4fc-4e2b-bf92-9440e431ff54")
 
 	tests := []struct {
-		name     string
-		r        *http.Request
-		param    string
-		source   ParamSource
+		name  string
+		r     *http.Request
+		param string
+
+		method func(r *http.Request, name string, required bool) (uuid.UUID, bool, error)
+
 		required bool
 		want     uuid.UUID
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=48ab873f-d4fc-4e2b-bf92-9440e431ff54", nil), "foo", ParamQuery, true, testUUID, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", ParamQuery, true, uuid.UUID{}, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", ParamQuery, false, uuid.UUID{}, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", ParamQuery, true, uuid.UUID{}, true, false},
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=48ab873f-d4fc-4e2b-bf92-9440e431ff54", nil), "foo", GetUUIDQuery, true, testUUID, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", GetUUIDQuery, true, uuid.UUID{}, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", GetUUIDQuery, false, uuid.UUID{}, false, false},
+		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", GetUUIDQuery, true, uuid.UUID{}, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok, err := GetUUIDFrom(tt.r, tt.param, tt.source, tt.required)
+			got, ok, err := tt.method(tt.r, tt.param, tt.required)
 
 			assert.Equal(t, tt.wantErr, err != nil, "error")
 			assert.Equal(t, tt.want, got, "value")
@@ -566,23 +582,25 @@ func TestGetUUIDFrom(t *testing.T) {
 
 func TestGetEnumFrom(t *testing.T) {
 	tests := []struct {
-		name     string
-		r        *http.Request
-		param    string
-		source   ParamSource
+		name  string
+		r     *http.Request
+		param string
+
+		method func(r *http.Request, name string, required bool, parser func(string) TestEnum) (TestEnum, bool, error)
+
 		required bool
 		want     TestEnum
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=bbb", nil), "foo", ParamQuery, true, testEnumB, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", ParamQuery, true, testEnumUnknown, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", ParamQuery, false, testEnumUnknown, false, false},
-		{"bad value", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", ParamQuery, true, testEnumUnknown, false, true},
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=bbb", nil), "foo", GetEnumQuery[TestEnum], true, testEnumB, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", GetEnumQuery[TestEnum], true, testEnumUnknown, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", GetEnumQuery[TestEnum], false, testEnumUnknown, false, false},
+		{"bad value", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", GetEnumQuery[TestEnum], true, testEnumUnknown, false, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok, err := GetEnumFrom(tt.r, tt.param, tt.source, tt.required, NewTestEnum)
+			got, ok, err := tt.method(tt.r, tt.param, tt.required, NewTestEnum)
 
 			assert.Equal(t, tt.wantErr, err != nil, "error")
 			assert.Equal(t, tt.want, got, "value")
@@ -593,24 +611,26 @@ func TestGetEnumFrom(t *testing.T) {
 
 func TestGetEnumArrayFrom(t *testing.T) {
 	tests := []struct {
-		name     string
-		r        *http.Request
-		param    string
-		source   ParamSource
+		name  string
+		r     *http.Request
+		param string
+
+		method func(r *http.Request, name string, required bool, parser func(string) TestEnum) ([]TestEnum, bool, error)
+
 		required bool
 		want     []TestEnum
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=bbb", nil), "foo", ParamQuery, true, []TestEnum{testEnumB}, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", ParamQuery, true, nil, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", ParamQuery, false, nil, false, false},
-		{"bad value", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", ParamQuery, true, []TestEnum{testEnumUnknown}, false, true},
-		{"all", httptest.NewRequest("GET", "/BAR?foo=aaa,bbb,ccc", nil), "foo", ParamQuery, true, []TestEnum{testEnumA, testEnumB, testEnumC}, false, true},
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=bbb", nil), "foo", GetEnumArrayQuery[TestEnum], true, []TestEnum{testEnumB}, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", GetEnumArrayQuery[TestEnum], true, nil, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", GetEnumArrayQuery[TestEnum], false, nil, false, false},
+		{"bad value", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", GetEnumArrayQuery[TestEnum], true, []TestEnum{testEnumUnknown}, false, true},
+		{"all", httptest.NewRequest("GET", "/BAR?foo=aaa,bbb,ccc", nil), "foo", GetEnumArrayQuery[TestEnum], true, []TestEnum{testEnumA, testEnumB, testEnumC}, false, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok, err := GetEnumArrayFrom(tt.r, tt.param, tt.source, tt.required, NewTestEnum)
+			got, ok, err := tt.method(tt.r, tt.param, tt.required, NewTestEnum)
 
 			assert.Equal(t, tt.wantErr, err != nil, "error")
 			assert.Equal(t, tt.want, got, "value")
