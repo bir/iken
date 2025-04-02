@@ -10,6 +10,37 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func NewQueryRequest(method, target, key, value string) *http.Request {
+	r := httptest.NewRequest(method, target+"?"+key+"="+value, nil)
+	return r
+}
+
+func NewPathRequest(method, target, key, value string) *http.Request {
+	r := httptest.NewRequest(method, target, nil)
+	r.SetPathValue(key, value)
+	return r
+}
+
+func NewHeaderRequest(method, target, key, value string) *http.Request {
+	r := httptest.NewRequest(method, target, nil)
+	r.Header.Add(key, value)
+	return r
+}
+
+func NewCookieRequest(method, target, key, value string) *http.Request {
+	r := httptest.NewRequest(method, target, nil)
+	r.AddCookie(&http.Cookie{Name: key, Value: value})
+	return r
+}
+
+func NewMultiSourceRequest(method, target, key string, values [4]string) *http.Request {
+	r := httptest.NewRequest(method, target+"?"+key+"="+values[ParamSourceQuery], nil)
+	r.Header.Set(key, values[ParamSourceHeader])
+	r.AddCookie(&http.Cookie{Name: key, Value: values[ParamSourceCookie]})
+	r.SetPathValue(key, values[ParamSourcePath])
+	return r
+}
+
 func TestGetString(t *testing.T) {
 	newHeaderRequest := func(key, value string) *http.Request {
 		r := httptest.NewRequest("GET", "/ping", nil)
@@ -318,5 +349,313 @@ func TestGetEnumArray(t *testing.T) {
 			assert.Equal(t, tt.want, got, "value")
 			assert.Equal(t, tt.wantOk, ok, "ok")
 		})
+	}
+}
+
+type ParamSource int
+
+const (
+	ParamSourcePath ParamSource = iota
+	ParamSourceQuery
+	ParamSourceHeader
+	ParamSourceCookie
+)
+
+var ParamSources = []ParamSource{ParamSourcePath, ParamSourceQuery, ParamSourceHeader, ParamSourceCookie}
+var ParamSourceNames = []string{"Path", "Query", "Header", "Cookie"}
+
+// This abomination of a test function exists to run the same tests against all the different types
+// that can be retrieved from a param and all the different ways a param can be passed. The
+// ugliness in typeList and everything downstream of that is necessary to get the polymorpism
+// required to run against different types.
+func TestMatrix(t *testing.T) {
+	testUUID, _ := uuid.Parse("48ab873f-d4fc-4e2b-bf92-9440e431ff54")
+	RequestFunctions := map[ParamSource]func(method string, target string, key string, value string) *http.Request{
+		ParamSourcePath:   NewPathRequest,
+		ParamSourceQuery:  NewQueryRequest,
+		ParamSourceHeader: NewHeaderRequest,
+		ParamSourceCookie: NewCookieRequest,
+	}
+
+	typeList := []struct {
+		Name              string
+		TestValue         any
+		TestValueAsString string
+		// Go does not allow you to pass a func() something as a func() any, so wrappers will be needed :(
+		Methods map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error)
+	}{
+		{
+			Name:              "String",
+			TestValue:         "foo",
+			TestValueAsString: "foo",
+			Methods: map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error){
+				ParamSourcePath: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetStringPath(r, name, required)
+				},
+				ParamSourceQuery: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetStringQuery(r, name, required)
+				},
+				ParamSourceHeader: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetStringHeader(r, name, required)
+				},
+				ParamSourceCookie: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetStringCookie(r, name, required)
+				},
+			},
+		},
+		{
+			Name:              "Int",
+			TestValue:         123,
+			TestValueAsString: "123",
+			Methods: map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error){
+				ParamSourcePath: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetIntPath(r, name, required)
+				},
+				ParamSourceQuery: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetIntQuery(r, name, required)
+				},
+				ParamSourceHeader: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetIntHeader(r, name, required)
+				},
+				ParamSourceCookie: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetIntCookie(r, name, required)
+				},
+			},
+		},
+		{
+			Name:              "Int32",
+			TestValue:         int32(123),
+			TestValueAsString: "123",
+			Methods: map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error){
+				ParamSourcePath: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetInt32Path(r, name, required)
+				},
+				ParamSourceQuery: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetInt32Query(r, name, required)
+				},
+				ParamSourceHeader: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetInt32Header(r, name, required)
+				},
+				ParamSourceCookie: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetInt32Cookie(r, name, required)
+				},
+			},
+		},
+		{
+			Name:              "Int64",
+			TestValue:         int64(123),
+			TestValueAsString: "123",
+			Methods: map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error){
+				ParamSourcePath: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetInt64Path(r, name, required)
+				},
+				ParamSourceQuery: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetInt64Query(r, name, required)
+				},
+				ParamSourceHeader: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetInt64Header(r, name, required)
+				},
+				ParamSourceCookie: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetInt64Cookie(r, name, required)
+				},
+			},
+		},
+		{
+			Name:              "Bool",
+			TestValue:         true,
+			TestValueAsString: "true",
+			Methods: map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error){
+				ParamSourcePath: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetBoolPath(r, name, required)
+				},
+				ParamSourceQuery: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetBoolQuery(r, name, required)
+				},
+				ParamSourceHeader: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetBoolHeader(r, name, required)
+				},
+				ParamSourceCookie: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetBoolCookie(r, name, required)
+				},
+			},
+		},
+		{
+			Name:              "Time",
+			TestValue:         time.Date(2006, 0o1, 0o2, 15, 4, 5, 0, time.UTC),
+			TestValueAsString: "2006-01-02T15:04:05Z",
+			Methods: map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error){
+				ParamSourcePath: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetTimePath(r, name, required)
+				},
+				ParamSourceQuery: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetTimeQuery(r, name, required)
+				},
+				ParamSourceHeader: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetTimeHeader(r, name, required)
+				},
+				ParamSourceCookie: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetTimeCookie(r, name, required)
+				},
+			},
+		},
+		{
+			Name:              "UUID",
+			TestValue:         testUUID,
+			TestValueAsString: "48ab873f-d4fc-4e2b-bf92-9440e431ff54",
+			Methods: map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error){
+				ParamSourcePath: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetUUIDPath(r, name, required)
+				},
+				ParamSourceQuery: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetUUIDQuery(r, name, required)
+				},
+				ParamSourceHeader: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetUUIDHeader(r, name, required)
+				},
+				ParamSourceCookie: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetUUIDCookie(r, name, required)
+				},
+			},
+		},
+		{
+			Name:              "Enum",
+			TestValue:         testEnumA,
+			TestValueAsString: "aaa",
+			Methods: map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error){
+				ParamSourcePath: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetEnumPath(r, name, required, NewTestEnum)
+				},
+				ParamSourceQuery: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetEnumQuery(r, name, required, NewTestEnum)
+				},
+				ParamSourceHeader: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetEnumHeader(r, name, required, NewTestEnum)
+				},
+				ParamSourceCookie: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetEnumCookie(r, name, required, NewTestEnum)
+				},
+			},
+		},
+		{
+			Name:              "StringArray",
+			TestValue:         []string{"a", "b"},
+			TestValueAsString: "a,b",
+			Methods: map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error){
+				ParamSourcePath: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetStringArrayPath(r, name, required)
+				},
+				ParamSourceQuery: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetStringArrayQuery(r, name, required)
+				},
+				ParamSourceHeader: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetStringArrayHeader(r, name, required)
+				},
+				ParamSourceCookie: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetStringArrayCookie(r, name, required)
+				},
+			},
+		},
+		{
+			Name:              "Int32Array",
+			TestValue:         []int32{123, 456},
+			TestValueAsString: "123,456",
+			Methods: map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error){
+				ParamSourcePath: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetInt32ArrayPath(r, name, required)
+				},
+				ParamSourceQuery: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetInt32ArrayQuery(r, name, required)
+				},
+				ParamSourceHeader: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetInt32ArrayHeader(r, name, required)
+				},
+				ParamSourceCookie: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetInt32ArrayCookie(r, name, required)
+				},
+			},
+		},
+		{
+			Name:              "EnumArray",
+			TestValue:         []TestEnum{testEnumA, testEnumB},
+			TestValueAsString: "aaa,bbb",
+			Methods: map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error){
+				ParamSourcePath: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetEnumArrayPath(r, name, required, NewTestEnum)
+				},
+				ParamSourceQuery: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetEnumArrayQuery(r, name, required, NewTestEnum)
+				},
+				ParamSourceHeader: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetEnumArrayHeader(r, name, required, NewTestEnum)
+				},
+				ParamSourceCookie: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetEnumArrayCookie(r, name, required, NewTestEnum)
+				},
+			},
+		},
+	}
+
+	for _, typeInfo := range typeList {
+		for _, source := range ParamSources {
+			multiSourceValues := [4]string{"a", "b", "c", "d"}
+			multiSourceValues[source] = typeInfo.TestValueAsString
+
+			perTypeTests := []struct {
+				Name     string
+				Request  *http.Request
+				Required bool
+				Want     any
+				WantErr  bool
+				WantOk   bool
+				Method   func(r *http.Request, name string, required bool) (any, bool, error)
+			}{
+				{
+					Name:     "required present",
+					Request:  RequestFunctions[source]("GET", "/BAR", "foo", typeInfo.TestValueAsString),
+					Method:   typeInfo.Methods[source],
+					Required: true,
+					Want:     typeInfo.TestValue,
+					WantOk:   true,
+				},
+				{
+					Name:     "required missing",
+					Request:  RequestFunctions[source]("GET", "/BAR", "", ""),
+					Method:   typeInfo.Methods[source],
+					Required: true,
+					WantErr:  true,
+				},
+				{
+					Name:     "optional missing",
+					Request:  RequestFunctions[source]("GET", "/BAR", "", ""),
+					Method:   typeInfo.Methods[source],
+					Required: false,
+					WantOk:   false,
+				},
+				{
+					Name:    "ignore other sources",
+					Request: NewMultiSourceRequest("GET", "/BAR", "foo", multiSourceValues),
+					Method:  typeInfo.Methods[source],
+					Want:    typeInfo.TestValue,
+					WantOk:  true,
+				},
+			}
+
+			for _, tt := range perTypeTests {
+				t.Run("Get"+typeInfo.Name+ParamSourceNames[source]+"_"+tt.Name, func(t *testing.T) {
+					got, ok, err := tt.Method(tt.Request, "foo", tt.Required)
+
+					if tt.WantErr {
+						assert.Error(t, err)
+					} else if tt.WantOk {
+						assert.NoError(t, err)
+						assert.True(t, ok)
+						assert.Equal(t, tt.Want, got)
+					} else {
+						assert.NoError(t, err)
+						assert.False(t, ok)
+					}
+				})
+			}
+		}
 	}
 }
