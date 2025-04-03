@@ -125,7 +125,7 @@ func (f *fancyWriter) Flush() {
 var ErrUnsupported = errors.New("not implemented")
 
 func (f *fancyWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	hj, ok := f.basicWriter.ResponseWriter.(http.Hijacker)
+	hj, ok := f.ResponseWriter.(http.Hijacker)
 	if !ok {
 		return nil, nil, ErrUnsupported // Ignore coverage - unlikely to error
 	}
@@ -134,16 +134,16 @@ func (f *fancyWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 }
 
 func (f *fancyWriter) ReadFrom(r io.Reader) (int64, error) {
-	if f.basicWriter.tee != nil {
+	if f.tee != nil {
 		return io.Copy(&f.basicWriter, r) //nolint:wrapcheck // just a proxy
 	}
 
-	rf, ok := f.basicWriter.ResponseWriter.(io.ReaderFrom)
+	rf, ok := f.ResponseWriter.(io.ReaderFrom)
 	if !ok {
 		return 0, ErrUnsupported // Ignore coverage - unlikely to error
 	}
 
-	f.basicWriter.maybeWriteHeader()
+	f.maybeWriteHeader()
 
 	n, err := rf.ReadFrom(r)
 	f.bytes += int(n)

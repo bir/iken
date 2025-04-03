@@ -1,50 +1,64 @@
+version: "2"
 run:
   go: "1.23"
   tests: false
-issues:
-  exclude-files:
-    - ".*_gen.go$"
-  exclude-dirs:
-    - temp
 linters:
-  enable-all: true
+  default: all
   disable:
-    - gochecknoglobals
-    - ireturn
-    - exhaustruct
-    - gocognit
     - depguard
-    - intrange #pending 1.57.3
-    - tenv
-linters-settings:
-  cyclop:
-    max-complexity: 18
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/bir/iken)
-  varnamelen:
-    max-distance: 10
-    ignore-type-assert-ok: true
-    ignore-map-index-ok: true
-    ignore-decls:
-      - ok bool
-      - i int
-      - n int
-      - e error
-      - h http.Handler
-      - t time.Time
-      - v reflect.Value
-      - w io.Writer
-      - w http.ResponseWriter
-      - rw http.ResponseWriter
-      - r *http.Request
-      - wg sync.WaitGroup
-      - c chan
-      - op string
-      - l zerolog.Logger
-      - r io.Reader
-      - l zerolog.Context
-      - s string
-      - l string
+    - exhaustruct
+    - gochecknoglobals
+    - gocognit
+    - intrange
+    - ireturn
+  settings:
+    cyclop:
+      max-complexity: 18
+    varnamelen:
+      max-distance: 10
+      ignore-type-assert-ok: true
+      ignore-map-index-ok: true
+      ignore-decls:
+        - ok bool
+        - i int
+        - n int
+        - e error
+        - h http.Handler
+        - t time.Time
+        - v reflect.Value
+        - w io.Writer
+        - w http.ResponseWriter
+        - rw http.ResponseWriter
+        - r *http.Request
+        - wg sync.WaitGroup
+        - c chan
+        - op string
+        - l zerolog.Logger
+        - r io.Reader
+        - l zerolog.Context
+        - s string
+        - l string
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - .*_gen.go$
+      - temp
+formatters:
+  enable:
+    - goimports
+    - gci
+    - gofumpt
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - localmodule
+      custom-order: true
+  exclusions:
+    generated: disable

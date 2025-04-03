@@ -361,8 +361,10 @@ const (
 	ParamSourceCookie
 )
 
-var ParamSources = []ParamSource{ParamSourcePath, ParamSourceQuery, ParamSourceHeader, ParamSourceCookie}
-var ParamSourceNames = []string{"Path", "Query", "Header", "Cookie"}
+var (
+	ParamSources     = []ParamSource{ParamSourcePath, ParamSourceQuery, ParamSourceHeader, ParamSourceCookie}
+	ParamSourceNames = []string{"Path", "Query", "Header", "Cookie"}
+)
 
 // This abomination of a test function exists to run the same tests against all the different types
 // that can be retrieved from a param and all the different ways a param can be passed. The
