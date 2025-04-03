@@ -1,5 +1,5 @@
 lint:
-	golangci-lint run --sort-results
+	golangci-lint run
 
 test:
 	go test -race ./...
@@ -17,8 +17,7 @@ updateAll:
 	go get -u ./...
 
 fmt:
-	gofumpt -l -w .
-	gci write . -s standard -s default -s "prefix(github.com/bir/iken)"
+	golangci-lint fmt
 
 tools:
 	go install golang.org/x/tools/cmd/goimports@latest
