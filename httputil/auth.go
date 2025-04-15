@@ -32,6 +32,11 @@ const (
 // request it returns an error.
 type AuthenticateFunc[T any] func(r *http.Request) (T, error)
 
+// TokenAuthenticatorFunc is the signature of a function used to authenticate a request given just the token.
+// Given a request, it returns the authenticated user.  If unable to authenticate the
+// request it returns an error.
+type TokenAuthenticatorFunc[T any] func(ctx context.Context, token string) (T, error)
+
 // AuthorizeFunc is the signature of a function used to authorize a request.  If unable
 // to authorize the user it returns an error.
 type AuthorizeFunc[T any] func(ctx context.Context, user T, scopes []string) error
@@ -42,6 +47,45 @@ type AuthCheck[T any] struct {
 	authenticate AuthenticateFunc[T]
 	authorize    AuthorizeFunc[T]
 	scopes       []string
+}
+
+func HeaderAuth[T any](key string, fn TokenAuthenticatorFunc[T]) AuthenticateFunc[T] {
+	return func(r *http.Request) (T, error) {
+		var empty T
+
+		token := r.Header.Get(key)
+		if token == "" {
+			return empty, ErrUnauthorized
+		}
+
+		return fn(r.Context(), token)
+	}
+}
+
+func QueryAuth[T any](key string, fn TokenAuthenticatorFunc[T]) AuthenticateFunc[T] {
+	return func(r *http.Request) (T, error) {
+		var empty T
+
+		token := r.URL.Query().Get(key)
+		if token == "" {
+			return empty, ErrUnauthorized
+		}
+
+		return fn(r.Context(), token)
+	}
+}
+
+func CookieAuth[T any](key string, fn TokenAuthenticatorFunc[T]) AuthenticateFunc[T] {
+	return func(r *http.Request) (T, error) {
+		var empty T
+
+		cookie, err := r.Cookie(key)
+		if err != nil || cookie == nil || len(cookie.Value) == 0 {
+			return empty, ErrUnauthorized
+		}
+
+		return fn(r.Context(), cookie.Value)
+	}
 }
 
 func NewAuthCheck[T any](authenticate AuthenticateFunc[T], authorize AuthorizeFunc[T], scopes ...string) AuthCheck[T] {
