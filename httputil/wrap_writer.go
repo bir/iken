@@ -82,12 +82,6 @@ func (b *basicWriter) Write(buf []byte) (int, error) {
 	return n, err
 }
 
-func (b *basicWriter) maybeWriteHeader() {
-	if !b.wroteHeader {
-		b.WriteHeader(http.StatusOK)
-	}
-}
-
 func (b *basicWriter) Status() int {
 	return b.code
 }
@@ -107,6 +101,12 @@ func (b *basicWriter) Unwrap() http.ResponseWriter {
 func (b *basicWriter) Flush() {
 	if fl, ok := b.ResponseWriter.(http.Flusher); ok {
 		fl.Flush()
+	}
+}
+
+func (b *basicWriter) maybeWriteHeader() {
+	if !b.wroteHeader {
+		b.WriteHeader(http.StatusOK)
 	}
 }
 

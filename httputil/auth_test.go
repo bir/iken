@@ -3,6 +3,7 @@ package httputil_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -32,7 +33,7 @@ func authenticate(r *http.Request) (string, error) {
 	return "", errors.New("missing")
 }
 
-func authorize(ctx context.Context, user string, scopes []string) error {
+func authorize(_ context.Context, user string, scopes []string) error {
 	if slices.Contains(scopes, user) {
 		return nil
 	}
@@ -136,6 +137,114 @@ func TestSecurityGroups_Auth(t *testing.T) {
 			if !tt.wantErr {
 				require.NoError(t, err)
 			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func strAuth(_ context.Context, token string) (string, error) {
+	if token == "" {
+		return "", errors.New("unreachable")
+	}
+
+	if token == "good" {
+		return "good", nil
+	}
+
+	if token == "bad" {
+		return "", errors.New("bad")
+	}
+
+	return "", errors.New("badder")
+}
+
+func TestHeaderAuth(t *testing.T) {
+	type testCase[T any] struct {
+		name string
+		key  string
+		val  string
+		fn   httputil.TokenAuthenticatorFunc[T]
+		want string
+		err  error
+	}
+	tests := []testCase[string]{
+		{"Empty", "Missing", "", strAuth, "", httputil.ErrUnauthorized},
+		{"Good", "Authorization", "good", strAuth, "good", nil},
+		{"Bad", "Authorization", "bad", strAuth, "", errors.New("bad")},
+		{"other", "Authorization", "other", strAuth, "", errors.New("badder")},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest("FOO", "/asdf", nil)
+			r.Header.Set(tt.key, tt.val)
+
+			got, err := httputil.HeaderAuth(tt.key, tt.fn)(r)
+			if tt.err != nil {
+				assert.Equal(t, tt.err, err)
+			}
+
+			assert.Equalf(t, tt.want, got, "HeaderAuth(%v, %v)", tt.key, tt.fn)
+		})
+	}
+}
+
+func TestQueryAuth(t *testing.T) {
+	type testCase[T any] struct {
+		name string
+		key  string
+		val  string
+		fn   httputil.TokenAuthenticatorFunc[T]
+		want string
+		err  error
+	}
+	tests := []testCase[string]{
+		{"Empty", "Missing", "", strAuth, "", httputil.ErrUnauthorized},
+		{"Good", "Authorization", "good", strAuth, "good", nil},
+		{"Bad", "Authorization", "bad", strAuth, "", errors.New("bad")},
+		{"other", "Authorization", "other", strAuth, "", errors.New("badder")},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest("FOO", fmt.Sprintf("/asdf?%s=%s", tt.key, tt.val), nil)
+
+			got, err := httputil.QueryAuth(tt.key, tt.fn)(r)
+			if tt.err != nil {
+				assert.Equal(t, tt.err, err)
+			}
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestCookieAuth(t *testing.T) {
+	type testCase[T any] struct {
+		name string
+		key  string
+		val  string
+		fn   httputil.TokenAuthenticatorFunc[T]
+		want string
+		err  error
+	}
+	tests := []testCase[string]{
+		{"Empty", "Missing", "", strAuth, "", httputil.ErrUnauthorized},
+		{"Good", "Authorization", "good", strAuth, "good", nil},
+		{"Bad", "Authorization", "bad", strAuth, "", errors.New("bad")},
+		{"other", "Authorization", "other", strAuth, "", errors.New("badder")},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest("FOO", "/asdf", nil)
+			r.AddCookie(&http.Cookie{
+				Name:  tt.key,
+				Value: tt.val,
+			})
+
+			got, err := httputil.CookieAuth(tt.key, tt.fn)(r)
+			if tt.err != nil {
+				assert.Equal(t, tt.err, err)
+			}
+
 			assert.Equal(t, tt.want, got)
 		})
 	}

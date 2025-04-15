@@ -81,6 +81,9 @@ func StringToURLHookFunc(f reflect.Type, t reflect.Type, data any) (any, error) 
 // ErrInvalidTime is returned when a time tag fails to parse.
 var ErrInvalidTime = errors.New("failed parsing time")
 
+// ErrInvalidRegex is returned when a regex tag fails to parse.
+var ErrInvalidRegex = errors.New("failed parsing regex")
+
 // StringToTimeFunc converts strings to time.Time.
 func StringToTimeFunc(f reflect.Type, t reflect.Type, data any) (any, error) {
 	if f.Kind() != reflect.String {
@@ -121,7 +124,7 @@ func StringToRegexFunc(f reflect.Type, t reflect.Type, data any) (any, error) {
 
 	out, err := regexp.Compile(s)
 	if err != nil {
-		return nil, fmt.Errorf("%w: `%v`", ErrInvalidTime, data)
+		return nil, fmt.Errorf("%w: %q", ErrInvalidRegex, s)
 	}
 
 	return out, nil

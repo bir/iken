@@ -3,6 +3,8 @@ package currency_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/bir/iken/currency"
 )
 
@@ -36,4 +38,9 @@ func TestFixedFormatter_Format(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPower10(t *testing.T) {
+	assert.Equal(t, currency.Power10(0), 1)
+	assert.Equal(t, currency.Power10(1), 10)
 }

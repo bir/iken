@@ -118,6 +118,7 @@ func TestComplex(t *testing.T) {
 		{"Complex", func() { config.File = ".envCOMPLEX" }, &ComplexConfig{}, nil, `{"TestMap":{"one":"1","two":"2"},"Time":"2022-01-01T00:00:00Z","Patterns":["123","asdf","https://a.b/c","^http:*"]}`, false},
 		{"BadTime", func() { config.File = ".envBADTIME" }, &ComplexConfig{}, nil, `{"TestMap":null,"Time":"0001-01-01T00:00:00Z"}`, true},
 		{"BadMap", nil, &ComplexConfig{}, map[string]string{"TEST_MAP": "FOO"}, `{"TestMap":{},"Time":"2021-01-01T00:00:00Z"}`, false},
+		{"BadRegex", func() { config.File = ".envEMPTY" }, &ComplexConfig{}, map[string]string{"PATTERNS": "a(b"}, `{"TestMap":null,"Time":"0001-01-01T00:00:00Z","Patterns":[""]}`, true},
 	}
 
 	for _, tt := range tests {
@@ -160,7 +161,7 @@ type ExampleConfig struct {
 
 func ExampleLoad() {
 	cfg := ExampleConfig{}
-	config.Load(&cfg)
+	_ = config.Load(&cfg)
 	fmt.Printf("DebugMode=%v\n", cfg.DebugMode)
 	fmt.Printf("Port=%v\n", cfg.Port)
 	fmt.Printf("DB=%v\n", cfg.DB)
@@ -172,7 +173,7 @@ func TestFoo(t *testing.T) {
 
 	cfg := ExampleConfig{}
 
-	config.Load(&cfg)
+	_ = config.Load(&cfg)
 	test := viper.GetStringSlice("TEST_ARRAY")
 	fmt.Printf("TEST=%#v\n", cfg.Test)
 	fmt.Printf("test=%#v\n", test)
