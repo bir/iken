@@ -158,8 +158,10 @@ func TestGetString(t *testing.T) {
 	}{
 		{" required present", "foo", "123", "foo", true, "123", false, true},
 		{" required missing", "", "", "foo", true, "", true, false},
+		{" required null", "foo", "null", "foo", true, "", true, false},
 		{" not required present", "foo", "123", "foo", false, "123", false, true},
 		{" not required missing", "", "", "foo", false, "", false, false},
+		{" not required null", "", "null", "foo", false, "", false, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -294,7 +296,9 @@ func TestGetBool(t *testing.T) {
 	}{
 		{"simple", httptest.NewRequest("GET", "/BAR?foo=true", nil), "foo", true, true, false, true},
 		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, false, true, false},
+		{"required null", httptest.NewRequest("GET", "/BAR?foo=null", nil), "foo", true, false, true, false},
 		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, false, false, false},
+		{"not required null", httptest.NewRequest("GET", "/BAR?foo=null", nil), "foo", false, false, false, false},
 		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, false, true, false},
 	}
 	for _, tt := range tests {

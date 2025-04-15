@@ -49,6 +49,10 @@ type LookupString func(key string) string
 func GetString(lookup LookupString, name string, required bool) (string, bool, error) {
 	s := lookup(name)
 
+	if s == "null" {
+		s = ""
+	}
+
 	if required && len(s) == 0 {
 		return "", false, fmt.Errorf("%s: %w", name, ErrNotFound)
 	}
