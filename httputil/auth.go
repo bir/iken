@@ -63,21 +63,13 @@ func HeaderAuth[T any](key string, fn TokenAuthenticatorFunc[T]) AuthenticateFun
 	}
 }
 
-const (
-	bearerAuthPrefix    = "Bearer "
-	lenBearerAuthPrefix = len(bearerAuthPrefix)
-)
+const bearerAuthPrefix = "Bearer "
 
 func BearerAuth[T any](key string, tokenAuth TokenAuthenticatorFunc[T]) AuthenticateFunc[T] {
 	return func(r *http.Request) (T, error) {
 		var empty T
 
-		token := r.Header.Get(key)
-
-		if strings.HasPrefix(token, bearerAuthPrefix) {
-			token = token[lenBearerAuthPrefix:]
-		}
-
+		token := strings.TrimPrefix(r.Header.Get(key), bearerAuthPrefix)
 		if token == "" {
 			return empty, ErrUnauthorized
 		}
