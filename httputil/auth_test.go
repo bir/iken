@@ -249,3 +249,35 @@ func TestCookieAuth(t *testing.T) {
 		})
 	}
 }
+
+func TestBearerAuth(t *testing.T) {
+	type testCase[T any] struct {
+		name string
+		key  string
+		val  string
+		fn   httputil.TokenAuthenticatorFunc[T]
+		want string
+		err  error
+	}
+	tests := []testCase[string]{
+		{"Empty", "Missing", "", strAuth, "", httputil.ErrUnauthorized},
+		{"Empty Bearer", "Missing", "Bearer ", strAuth, "", httputil.ErrUnauthorized},
+		{"Good optional bearer", "Authorization", "good", strAuth, "good", nil},
+		{"Good", "Authorization", "Bearer good", strAuth, "good", nil},
+		{"Bad", "Authorization", "Bearer bad", strAuth, "", errors.New("bad")},
+		{"other", "Authorization", "Bearer other", strAuth, "", errors.New("badder")},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest("FOO", "/asdf", nil)
+			r.Header.Set(tt.key, tt.val)
+
+			got, err := httputil.BearerAuth(tt.key, tt.fn)(r)
+			if tt.err != nil {
+				assert.Equal(t, tt.err, err)
+			}
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 // AuthError encompasses Authentication and Authorization errors.
@@ -59,6 +60,26 @@ func HeaderAuth[T any](key string, fn TokenAuthenticatorFunc[T]) AuthenticateFun
 		}
 
 		return fn(r.Context(), token)
+	}
+}
+
+const bearerAuthPrefix = "Bearer "
+
+func BearerAuth[T any](key string, tokenAuth TokenAuthenticatorFunc[T]) AuthenticateFunc[T] {
+	return func(r *http.Request) (T, error) {
+		var empty T
+
+		token := r.Header.Get(key)
+
+		if strings.HasPrefix(token, bearerAuthPrefix) {
+			token = token[7:]
+		}
+
+		if token == "" {
+			return empty, ErrUnauthorized
+		}
+
+		return tokenAuth(r.Context(), token)
 	}
 }
 
