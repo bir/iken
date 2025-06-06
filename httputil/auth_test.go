@@ -274,13 +274,15 @@ func TestBearerAuth(t *testing.T) {
 
 			got, err := httputil.BearerAuth(tt.key, tt.fn)(r)
 			if tt.err != nil {
-				assert.Equal(t, tt.err, err)
+				assert.Equal(t, err, tt.err)
 			}
 
 			assert.Equal(t, tt.want, got)
 		})
 	}
 }
+
+var ErrBad = errors.New("bad")
 
 func basicAuth(_ context.Context, user, _ string) (string, error) {
 	if user == "" {
@@ -292,7 +294,7 @@ func basicAuth(_ context.Context, user, _ string) (string, error) {
 	}
 
 	if user == "bad" {
-		return "", errors.New("bad")
+		return "", ErrBad
 	}
 
 	return "", errors.New("badder")
@@ -313,7 +315,7 @@ func TestBasicAuth(t *testing.T) {
 		{"No split", "Authorization", "Basic Z29vZGJhZA==", basicAuth, "", httputil.ErrUnauthorized},
 		{"Good", "Authorization", "Basic Z29vZDpwYXNz", basicAuth, "good", nil},
 		{"Good Proxy", "Proxy-Authorization", "Basic Z29vZDpwYXNz", basicAuth, "good", nil},
-		{"Bad", "Authorization", "Basic YmFkOnBhc3M=", basicAuth, "", errors.New("bad")},
+		{"Bad", "Authorization", "Basic YmFkOnBhc3M=", basicAuth, "", ErrBad},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -322,7 +324,7 @@ func TestBasicAuth(t *testing.T) {
 
 			got, err := httputil.BasicAuth(tt.fn)(r)
 			if tt.err != nil {
-				assert.Equal(t, tt.err, err)
+				assert.ErrorIs(t, err, tt.err)
 			}
 
 			assert.Equal(t, tt.want, got)

@@ -116,17 +116,17 @@ func BasicAuth[T any](authFn BasicAuthenticatorFunc[T]) AuthenticateFunc[T] {
 		}
 
 		if token == "" {
-			return empty, ErrBasicAuthenticate
+			return empty, fmt.Errorf("%w: missing", ErrBasicAuthenticate)
 		}
 
 		payload, err := base64.StdEncoding.DecodeString(token)
 		if err != nil {
-			return empty, ErrBasicAuthenticate
+			return empty, fmt.Errorf("%w: invalid", ErrBasicAuthenticate)
 		}
 
 		pair := bytes.SplitN(payload, []byte(":"), 2)
 		if len(pair) != 2 {
-			return empty, ErrUnauthorized
+			return empty, fmt.Errorf("%w: invalid", ErrUnauthorized)
 		}
 
 		return authFn(r.Context(), string(pair[0]), string(pair[1]))
