@@ -274,7 +274,57 @@ func TestBearerAuth(t *testing.T) {
 
 			got, err := httputil.BearerAuth(tt.key, tt.fn)(r)
 			if tt.err != nil {
-				assert.Equal(t, tt.err, err)
+				assert.Equal(t, err, tt.err)
+			}
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+var ErrBad = errors.New("bad")
+
+func basicAuth(_ context.Context, user, _ string) (string, error) {
+	if user == "" {
+		return "", errors.New("unreachable")
+	}
+
+	if user == "good" {
+		return "good", nil
+	}
+
+	if user == "bad" {
+		return "", ErrBad
+	}
+
+	return "", errors.New("badder")
+}
+
+func TestBasicAuth(t *testing.T) {
+	type testCase[T any] struct {
+		name string
+		key  string
+		val  string
+		fn   httputil.BasicAuthenticatorFunc[T]
+		want string
+		err  error
+	}
+	tests := []testCase[string]{
+		{"Empty", "Missing", "", basicAuth, "", httputil.ErrBasicAuthenticate},
+		{"Invalid base64", "Authorization", "Basic other", basicAuth, "", httputil.ErrBasicAuthenticate},
+		{"No split", "Authorization", "Basic Z29vZGJhZA==", basicAuth, "", httputil.ErrUnauthorized},
+		{"Good", "Authorization", "Basic Z29vZDpwYXNz", basicAuth, "good", nil},
+		{"Good Proxy", "Proxy-Authorization", "Basic Z29vZDpwYXNz", basicAuth, "good", nil},
+		{"Bad", "Authorization", "Basic YmFkOnBhc3M=", basicAuth, "", ErrBad},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest("FOO", "/asdf", nil)
+			r.Header.Set(tt.key, tt.val)
+
+			got, err := httputil.BasicAuth(tt.fn)(r)
+			if tt.err != nil {
+				assert.ErrorIs(t, err, tt.err)
 			}
 
 			assert.Equal(t, tt.want, got)

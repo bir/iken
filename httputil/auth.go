@@ -1,7 +1,9 @@
 package httputil
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"strings"
@@ -26,6 +28,15 @@ const (
 
 	// ErrMissingAuthorizer is caused by internal configuration errors when evaluating authorization.
 	ErrMissingAuthorizer = AuthError("missing authenticator")
+
+	// BasicAuthPrefix as defined by https://datatracker.ietf.org/doc/html/rfc7617
+	BasicAuthPrefix = "Basic "
+
+	// BasicAuthHeader as defined by https://datatracker.ietf.org/doc/html/rfc7617
+	BasicAuthHeader = "Authorization"
+
+	// BasicAuthProxyHeader as defined by https://datatracker.ietf.org/doc/html/rfc7617
+	BasicAuthProxyHeader = "Proxy-Authorization"
 )
 
 // AuthenticateFunc is the signature of a function used to authenticate an HTTP request.
@@ -34,9 +45,12 @@ const (
 type AuthenticateFunc[T any] func(r *http.Request) (T, error)
 
 // TokenAuthenticatorFunc is the signature of a function used to authenticate a request given just the token.
-// Given a request, it returns the authenticated user.  If unable to authenticate the
-// request it returns an error.
+// Given a token extracted from the request, it returns the authenticated user.  If unable to authenticate,
+// it returns an error.
 type TokenAuthenticatorFunc[T any] func(ctx context.Context, token string) (T, error)
+
+// BasicAuthenticatorFunc is the signature of a function used to authenticate a request given use user/pass.
+type BasicAuthenticatorFunc[T any] func(ctx context.Context, user, pass string) (T, error)
 
 // AuthorizeFunc is the signature of a function used to authorize a request.  If unable
 // to authorize the user it returns an error.
@@ -88,6 +102,34 @@ func QueryAuth[T any](key string, fn TokenAuthenticatorFunc[T]) AuthenticateFunc
 		}
 
 		return fn(r.Context(), token)
+	}
+}
+
+func BasicAuth[T any](authFn BasicAuthenticatorFunc[T]) AuthenticateFunc[T] {
+	return func(r *http.Request) (T, error) {
+		var empty T
+
+		token := strings.TrimPrefix(r.Header.Get(BasicAuthHeader), BasicAuthPrefix)
+		if token == "" {
+			// Fallback to the proxy header if available
+			token = strings.TrimPrefix(r.Header.Get(BasicAuthProxyHeader), BasicAuthPrefix)
+		}
+
+		if token == "" {
+			return empty, fmt.Errorf("%w: missing", ErrBasicAuthenticate)
+		}
+
+		payload, err := base64.StdEncoding.DecodeString(token)
+		if err != nil {
+			return empty, fmt.Errorf("%w: invalid", ErrBasicAuthenticate)
+		}
+
+		pair := bytes.SplitN(payload, []byte(":"), 2)
+		if len(pair) != 2 {
+			return empty, fmt.Errorf("%w: invalid", ErrUnauthorized)
+		}
+
+		return authFn(r.Context(), string(pair[0]), string(pair[1]))
 	}
 }
 
