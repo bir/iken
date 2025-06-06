@@ -12,6 +12,9 @@ linters:
     - intrange
     - ireturn
   settings:
+    mnd:
+      ignored-numbers:
+        - "2"
     cyclop:
       max-complexity: 18
     varnamelen:
