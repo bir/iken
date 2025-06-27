@@ -1,6 +1,7 @@
 package params
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -203,6 +204,35 @@ func TestGetInt32Array(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, ok, err := GetInt32Array(tt.r, tt.param, tt.required)
+
+			assert.Equal(t, tt.wantErr, err != nil, "error")
+			assert.Equal(t, tt.want, got, "value")
+			assert.Equal(t, tt.wantOk, ok, "ok")
+		})
+	}
+}
+
+func TestGetUUIDArray(t *testing.T) {
+	id1, id2, id3 := uuid.New(), uuid.New(), uuid.New()
+
+	tests := []struct {
+		name     string
+		r        *http.Request
+		param    string
+		required bool
+		want     []uuid.UUID
+		wantErr  bool
+		wantOk   bool
+	}{
+		{"simple", httptest.NewRequest("GET", "/BAR?foo="+id1.String(), nil), "foo", true, []uuid.UUID{id1}, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, nil, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, nil, false, false},
+		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, nil, true, false},
+		{"large", httptest.NewRequest("GET", fmt.Sprintf("/BAR?foo=%s,%s,%s", id1.String(), id2.String(), id3.String()), nil), "foo", true, []uuid.UUID{id1, id2, id3}, false, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok, err := GetUUIDArray(tt.r, tt.param, tt.required)
 
 			assert.Equal(t, tt.wantErr, err != nil, "error")
 			assert.Equal(t, tt.want, got, "value")
@@ -573,6 +603,25 @@ func TestMatrix(t *testing.T) {
 				},
 				ParamSourceCookie: func(r *http.Request, name string, required bool) (any, bool, error) {
 					return GetInt32ArrayCookie(r, name, required)
+				},
+			},
+		},
+		{
+			Name:              "UUIDArray",
+			TestValue:         []uuid.UUID{uuid.MustParse("902da57e-3e3a-470a-b821-0cd140a7f442"), uuid.MustParse("bcdcf46c-1baf-4e95-b607-97cf4aca1877")},
+			TestValueAsString: "902da57e-3e3a-470a-b821-0cd140a7f442,bcdcf46c-1baf-4e95-b607-97cf4aca1877",
+			Methods: map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error){
+				ParamSourcePath: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetUUIDArrayPath(r, name, required)
+				},
+				ParamSourceQuery: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetUUIDArrayQuery(r, name, required)
+				},
+				ParamSourceHeader: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetUUIDArrayHeader(r, name, required)
+				},
+				ParamSourceCookie: func(r *http.Request, name string, required bool) (any, bool, error) {
+					return GetUUIDArrayCookie(r, name, required)
 				},
 			},
 		},

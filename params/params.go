@@ -502,6 +502,66 @@ func convertInt32Array(pp []string) ([]int32, bool, error) {
 	return out, true, nil
 }
 
+func GetUUIDArray(r *http.Request, name string, required bool) ([]uuid.UUID, bool, error) {
+	pp, ok, err := GetStringArray(r, name, required)
+	if err != nil || len(pp) == 0 || !ok {
+		return nil, false, err
+	}
+
+	return convertUUIDArray(pp)
+}
+
+func GetUUIDArrayPath(r *http.Request, name string, required bool) ([]uuid.UUID, bool, error) {
+	pp, ok, err := GetStringArrayPath(r, name, required)
+	if err != nil || len(pp) == 0 || !ok {
+		return nil, false, err
+	}
+
+	return convertUUIDArray(pp)
+}
+
+func GetUUIDArrayQuery(r *http.Request, name string, required bool) ([]uuid.UUID, bool, error) {
+	pp, ok, err := GetStringArrayQuery(r, name, required)
+	if err != nil || len(pp) == 0 || !ok {
+		return nil, false, err
+	}
+
+	return convertUUIDArray(pp)
+}
+
+func GetUUIDArrayHeader(r *http.Request, name string, required bool) ([]uuid.UUID, bool, error) {
+	pp, ok, err := GetStringArrayHeader(r, name, required)
+	if err != nil || len(pp) == 0 || !ok {
+		return nil, false, err
+	}
+
+	return convertUUIDArray(pp)
+}
+
+func GetUUIDArrayCookie(r *http.Request, name string, required bool) ([]uuid.UUID, bool, error) {
+	pp, ok, err := GetStringArrayCookie(r, name, required)
+	if err != nil || len(pp) == 0 || !ok {
+		return nil, false, err
+	}
+
+	return convertUUIDArray(pp)
+}
+
+func convertUUIDArray(pp []string) ([]uuid.UUID, bool, error) {
+	out := make([]uuid.UUID, len(pp))
+
+	for i, p := range pp {
+		id, err := uuid.Parse(p)
+		if err != nil {
+			return nil, false, fmt.Errorf("invalid uuid:%q: %w", p, err)
+		}
+
+		out[i] = id
+	}
+
+	return out, true, nil
+}
+
 func GetEnum[T comparable](r *http.Request, name string, required bool, parser func(string) T) (T, bool, error) {
 	var out T
 
