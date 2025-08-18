@@ -19,7 +19,7 @@ func TestID(t *testing.T) {
 }
 
 func TestOperation(t *testing.T) {
-	ctx := t.Context()
+	ctx := context.Background()
 
 	assert.Empty(t, logctx.GetOperation(ctx))
 
