@@ -124,7 +124,8 @@ func Load(cfg any) error {
 			continue
 		}
 
-		if err = parseTag(tag); err != nil {
+		err = parseTag(tag)
+		if err != nil {
 			return fmt.Errorf("error parsing %s tag on field %s: %w", TagName, f.Name, err)
 		}
 	}

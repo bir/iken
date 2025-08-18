@@ -339,6 +339,33 @@ func TestGetInt32Array(t *testing.T) {
 	}
 }
 
+func TestGetUUIDArray(t *testing.T) {
+	tests := []struct {
+		name     string
+		r        *http.Request
+		param    string
+		required bool
+		want     []int32
+		wantErr  bool
+		wantOk   bool
+	}{
+		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", true, []int32{123}, false, true},
+		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, nil, true, false},
+		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, nil, false, false},
+		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, nil, true, false},
+		{"large", httptest.NewRequest("GET", "/BAR?foo=1,2,3,4", nil), "foo", true, []int32{1, 2, 3, 4}, false, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok, err := GetInt32Array(tt.r.FormValue, tt.param, tt.required)
+
+			assert.Equal(t, tt.wantErr, err != nil, "error")
+			assert.Equal(t, tt.wantOk, ok)
+			assert.Equal(t, tt.want, got, "value")
+		})
+	}
+}
+
 func TestGetTime(t *testing.T) {
 	tests := []struct {
 		name     string

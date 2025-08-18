@@ -173,6 +173,26 @@ func GetInt32Array(lookup LookupString, name string, required bool) ([]int32, bo
 	return out, true, nil
 }
 
+func GetUUIDArray(lookup LookupString, name string, required bool) ([]uuid.UUID, bool, error) {
+	pp, ok, err := GetStringArray(lookup, name, required)
+	if err != nil || len(pp) == 0 {
+		return nil, ok, err
+	}
+
+	out := make([]uuid.UUID, len(pp))
+
+	for i, p := range pp {
+		id, err := uuid.Parse(p)
+		if err != nil {
+			return nil, false, fmt.Errorf("invalid uuid: %w", err)
+		}
+
+		out[i] = id
+	}
+
+	return out, true, nil
+}
+
 func GetEnum[T comparable](lookup LookupString, name string, required bool, parser func(string) T) (T, bool, error) {
 	var out T
 

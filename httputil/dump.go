@@ -132,11 +132,13 @@ func drainBody(body io.ReadCloser) (io.ReadCloser, io.ReadCloser, error) {
 
 	var buf bytes.Buffer
 
-	if _, err := buf.ReadFrom(body); err != nil {
+	_, err := buf.ReadFrom(body)
+	if err != nil {
 		return nil, body, fmt.Errorf("buf.ReadFrom:%w", err)
 	}
 
-	if err := body.Close(); err != nil {
+	err = body.Close()
+	if err != nil {
 		return nil, body, fmt.Errorf("body.Close:%w", err)
 	}
 

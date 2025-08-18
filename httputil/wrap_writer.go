@@ -51,6 +51,7 @@ func WrapWriter(w http.ResponseWriter) WriterProxy {
 // http.ResponseWriter interface.
 type basicWriter struct {
 	http.ResponseWriter
+
 	wroteHeader bool
 	code        int
 	bytes       int
