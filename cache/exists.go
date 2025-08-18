@@ -9,8 +9,9 @@ import (
 // means in Go for tracking keys.
 // See: https://medium.com/easyread/golang-series-empty-struct-ed317e6d8600
 type Exists[K comparable] struct {
-	items map[K]struct{}
 	*sync.RWMutex
+
+	items map[K]struct{}
 }
 
 // NewExists creates a new thread safe exists.

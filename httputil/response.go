@@ -27,7 +27,8 @@ func Write(w http.ResponseWriter, r *http.Request, contentType string, code int,
 	w.Header().Set(ContentType, contentType)
 	w.WriteHeader(code)
 
-	if _, err := w.Write(data); err != nil {
+	_, err := w.Write(data)
+	if err != nil {
 		ErrorHandler(w, r, err)
 	}
 }
@@ -36,7 +37,8 @@ func ReaderWrite(w http.ResponseWriter, r *http.Request, contentType string, cod
 	w.Header().Set(ContentType, contentType)
 	w.WriteHeader(code)
 
-	if _, err := io.Copy(w, data); err != nil {
+	_, err := io.Copy(w, data)
+	if err != nil {
 		ErrorHandler(w, r, err)
 	}
 }

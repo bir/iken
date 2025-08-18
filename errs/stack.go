@@ -29,8 +29,9 @@ func (s *stack) StackTrace() []uintptr {
 }
 
 type stackError struct {
-	err error
 	*stack
+
+	err error
 }
 
 // Unwrap provides compatibility for Go 1.13 error chains.

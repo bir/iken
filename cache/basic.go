@@ -4,8 +4,9 @@ import "sync"
 
 // Basic is a simple cache and has only supports manual eviction.
 type Basic[K comparable, V any] struct {
-	items map[K]V
 	*sync.RWMutex
+
+	items map[K]V
 }
 
 // NewBasic creates a new non-thread safe cache.

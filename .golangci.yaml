@@ -11,6 +11,7 @@ linters:
     - gocognit
     - intrange
     - ireturn
+    - wsl # in favor of wsl_v5
   settings:
     mnd:
       ignored-numbers:
@@ -41,6 +42,9 @@ linters:
         - l zerolog.Context
         - s string
         - l string
+    wsl_v5:
+      disable:
+        - decl
   exclusions:
     generated: lax
     presets:
