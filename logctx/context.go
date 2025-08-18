@@ -9,7 +9,6 @@ type ContextKey string
 const (
 	operationKey ContextKey = "operation"
 	opID         ContextKey = "request_id"
-	opMessage    ContextKey = "request_message"
 )
 
 // SetID sets the request ID logged to the context.
