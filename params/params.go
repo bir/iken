@@ -14,63 +14,68 @@ import (
 var ErrNotFound = errors.New("not found")
 
 func GetString(r *http.Request, name string, required bool) (string, bool, error) {
-	param := r.PathValue(name)
-
-	if param == "" {
-		param = r.URL.Query().Get(name)
+	values, ok, err := GetStringArray(r, name, required)
+	if err != nil {
+		return "", false, err
 	}
 
-	// fallback to a header lookup
-	if param == "" {
-		param = r.Header.Get(name)
+	if !ok || len(values) == 0 {
+		return "", false, nil
 	}
 
-	if required && len(param) == 0 {
-		return "", false, fmt.Errorf("%s: %w", name, ErrNotFound)
-	}
-
-	return param, param != "", nil
+	return values[0], true, nil
 }
 
 func GetStringPath(r *http.Request, name string, required bool) (string, bool, error) {
-	param := r.PathValue(name)
-	if required && len(param) == 0 {
-		return "", false, fmt.Errorf("%s: %w", name, ErrNotFound)
+	values, ok, err := GetStringArrayPath(r, name, required)
+	if err != nil {
+		return "", false, err
 	}
 
-	return param, param != "", nil
+	if !ok || len(values) == 0 {
+		return "", false, nil
+	}
+
+	return values[0], true, nil
 }
 
 func GetStringQuery(r *http.Request, name string, required bool) (string, bool, error) {
-	param := r.URL.Query().Get(name)
-	if required && len(param) == 0 {
-		return "", false, fmt.Errorf("%s: %w", name, ErrNotFound)
+	values, ok, err := GetStringArrayQuery(r, name, required)
+	if err != nil {
+		return "", false, err
 	}
 
-	return param, param != "", nil
+	if !ok || len(values) == 0 {
+		return "", false, nil
+	}
+
+	return values[0], true, nil
 }
 
 func GetStringHeader(r *http.Request, name string, required bool) (string, bool, error) {
-	param := r.Header.Get(name)
-	if required && len(param) == 0 {
-		return "", false, fmt.Errorf("%s: %w", name, ErrNotFound)
+	values, ok, err := GetStringArrayHeader(r, name, required)
+	if err != nil {
+		return "", false, err
 	}
 
-	return param, param != "", nil
+	if !ok || len(values) == 0 {
+		return "", false, nil
+	}
+
+	return values[0], true, nil
 }
 
 func GetStringCookie(r *http.Request, name string, required bool) (string, bool, error) {
-	cookie, err := r.Cookie(name)
-	if err == nil && cookie != nil {
-		// Return found even if cookie is empty, because it _is_ present!
-		return cookie.Value, true, nil
+	values, ok, err := GetStringArrayCookie(r, name, required)
+	if err != nil {
+		return "", false, err
 	}
 
-	if required {
-		return "", false, fmt.Errorf("%s: %w", name, ErrNotFound)
+	if !ok || len(values) == 0 {
+		return "", false, nil
 	}
 
-	return "", false, nil
+	return values[0], true, nil
 }
 
 func GetInt32(r *http.Request, name string, required bool) (int32, bool, error) {
@@ -397,49 +402,94 @@ func convertUUID(s string) (uuid.UUID, bool, error) {
 	return id, true, nil
 }
 
-func GetStringArray(r *http.Request, name string, required bool) ([]string, bool, error) {
-	s, ok, err := GetString(r, name, required)
-	if err != nil || len(s) == 0 || !ok {
-		return nil, false, err
+func splitAndAppend(dest []string, source string) []string {
+	for v := range strings.SplitSeq(source, ",") {
+		if v != "" {
+			dest = append(dest, v)
+		}
 	}
 
-	return strings.Split(s, ","), true, nil
+	return dest
+}
+
+func GetStringArray(r *http.Request, name string, required bool) ([]string, bool, error) {
+	out, _, _ := GetStringArrayPath(r, name, false)
+
+	if len(out) == 0 {
+		out, _, _ = GetStringArrayQuery(r, name, false)
+	}
+
+	// fallback to a header lookup
+	if len(out) == 0 {
+		out, _, _ = GetStringArrayHeader(r, name, false)
+	}
+
+	if len(out) == 0 {
+		out, _, _ = GetStringArrayCookie(r, name, false)
+	}
+
+	if required && len(out) == 0 {
+		return nil, false, fmt.Errorf("%s: %w", name, ErrNotFound)
+	}
+
+	return out, len(out) > 0, nil
 }
 
 func GetStringArrayPath(r *http.Request, name string, required bool) ([]string, bool, error) {
-	s, ok, err := GetStringPath(r, name, required)
-	if err != nil || len(s) == 0 || !ok {
-		return nil, false, err
+	out := splitAndAppend(nil, r.PathValue(name))
+
+	if required && len(out) == 0 {
+		return nil, false, fmt.Errorf("%s: %w", name, ErrNotFound)
 	}
 
-	return strings.Split(s, ","), true, nil
+	return out, len(out) > 0, nil
 }
 
 func GetStringArrayQuery(r *http.Request, name string, required bool) ([]string, bool, error) {
-	s, ok, err := GetStringQuery(r, name, required)
-	if err != nil || len(s) == 0 || !ok {
-		return nil, false, err
+	var out []string
+
+	values := r.URL.Query()[name]
+	for _, v := range values {
+		out = splitAndAppend(out, v)
 	}
 
-	return strings.Split(s, ","), true, nil
+	if required && len(out) == 0 {
+		return nil, false, fmt.Errorf("%s: %w", name, ErrNotFound)
+	}
+
+	return out, len(out) > 0, nil
 }
 
 func GetStringArrayHeader(r *http.Request, name string, required bool) ([]string, bool, error) {
-	s, ok, err := GetStringHeader(r, name, required)
-	if err != nil || len(s) == 0 || !ok {
-		return nil, false, err
+	var out []string
+
+	values := r.Header.Values(name)
+	for _, v := range values {
+		out = splitAndAppend(out, v)
 	}
 
-	return strings.Split(s, ","), true, nil
+	if required && len(out) == 0 {
+		return nil, false, fmt.Errorf("%s: %w", name, ErrNotFound)
+	}
+
+	return out, len(out) > 0, nil
 }
 
 func GetStringArrayCookie(r *http.Request, name string, required bool) ([]string, bool, error) {
-	s, ok, err := GetStringCookie(r, name, required)
-	if err != nil || len(s) == 0 || !ok {
-		return nil, false, err
+	var out []string
+
+	cookies := r.CookiesNamed(name)
+	for _, c := range cookies {
+		if c != nil {
+			out = splitAndAppend(out, c.Value)
+		}
 	}
 
-	return strings.Split(s, ","), true, nil
+	if required && len(out) == 0 {
+		return nil, false, fmt.Errorf("%s: %w", name, ErrNotFound)
+	}
+
+	return out, len(out) > 0, nil
 }
 
 func GetInt32Array(r *http.Request, name string, required bool) ([]int32, bool, error) {

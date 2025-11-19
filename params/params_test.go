@@ -229,6 +229,7 @@ func TestGetUUIDArray(t *testing.T) {
 		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, nil, false, false},
 		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, nil, true, false},
 		{"large", httptest.NewRequest("GET", fmt.Sprintf("/BAR?foo=%s,%s,%s", id1.String(), id2.String(), id3.String()), nil), "foo", true, []uuid.UUID{id1, id2, id3}, false, true},
+		{"large repeated", httptest.NewRequest("GET", fmt.Sprintf("/BAR?foo=%s&foo=%s,,,%s", id1.String(), id2.String(), id3.String()), nil), "foo", true, []uuid.UUID{id1, id2, id3}, false, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
