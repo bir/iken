@@ -18,7 +18,7 @@ type HashedFanOut[I any] struct {
 
 func NewHashedFanOut[I any](workerCount, bufferSize uint, hasher HashFunc[I]) *HashedFanOut[I] {
 	inputs := make([]chan I, workerCount)
-	for i := uint(0); i < workerCount; i++ {
+	for i := range workerCount {
 		inputs[i] = make(chan I, bufferSize)
 	}
 

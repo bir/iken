@@ -41,6 +41,7 @@ func RecoverLogger(log zerolog.Logger) func(http.Handler) http.Handler {
 
 func LogRecoverError(ctx context.Context, stackSkip int, recoverErr any) {
 	var err error
+
 	switch t := recoverErr.(type) {
 	case string:
 		err = fmt.Errorf("%v: %w", t, ErrInternal)
@@ -82,7 +83,7 @@ func cleanPaths(line *string) {
 	paths := []string{RecoverBasePath, "libexec/src/", "github.com/", "gopkg.in/", "x64/src"}
 	prefixes := []string{"./", "\t$GO/", "\tgithub.com/", "\tgopkg.in/", "\t$GO/"}
 
-	for n := 0; n < len(paths); n++ {
+	for n := range paths {
 		if mapLine(line, paths[n], prefixes[n]) {
 			return
 		}

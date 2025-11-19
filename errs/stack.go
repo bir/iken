@@ -58,6 +58,7 @@ func WithStack(e any, skip int) error {
 	}
 
 	var err error
+
 	switch eT := e.(type) {
 	case error:
 		err = eT

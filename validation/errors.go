@@ -136,7 +136,7 @@ func Join(elems []error, sep string) string {
 
 	n := len(sep) * (len(elems) - 1)
 
-	for i := 0; i < len(elems); i++ {
+	for i := range elems {
 		n += len(elems[i].Error())
 	}
 

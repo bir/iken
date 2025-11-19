@@ -22,7 +22,7 @@ func StringToLocationHookFunc(f reflect.Type, t reflect.Type, data any) (any, er
 		return data, nil
 	}
 
-	if t != reflect.TypeOf(time.Location{}) {
+	if t != reflect.TypeFor[time.Location]() {
 		return data, nil
 	}
 
@@ -45,7 +45,7 @@ func StringToMapStringStringHookFunc(f reflect.Type, t reflect.Type, data any) (
 		return data, nil
 	}
 
-	if t != reflect.TypeOf(map[string]string{}) {
+	if t != reflect.TypeFor[map[string]string]() {
 		return data, nil
 	}
 
@@ -61,7 +61,7 @@ func StringToURLHookFunc(f reflect.Type, t reflect.Type, data any) (any, error) 
 		return data, nil
 	}
 
-	if t != reflect.TypeOf(&url.URL{}) { //nolint:exhaustruct
+	if t != reflect.TypeFor[url.URL]() { //nolint:exhaustruct
 		return data, nil
 	}
 
@@ -90,7 +90,7 @@ func StringToTimeFunc(f reflect.Type, t reflect.Type, data any) (any, error) {
 		return data, nil
 	}
 
-	if t != reflect.TypeOf(time.Time{}) {
+	if t != reflect.TypeFor[time.Time]() {
 		return data, nil
 	}
 
@@ -113,7 +113,7 @@ func StringToRegexFunc(f reflect.Type, t reflect.Type, data any) (any, error) {
 		return data, nil
 	}
 
-	if t != reflect.TypeOf(regexp.Regexp{}) {
+	if t != reflect.TypeFor[regexp.Regexp]() {
 		return data, nil
 	}
 
@@ -136,8 +136,8 @@ func StringToSliceHookFunc(sep string) mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
+		data any,
+	) (any, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}

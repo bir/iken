@@ -107,6 +107,7 @@ func Load(cfg any) error {
 	viper.SetConfigFile(File)
 	viper.SetConfigType(Type)
 	viper.AutomaticEnv()
+
 	err := viper.ReadInConfig()
 
 	var pathError *os.PathError
