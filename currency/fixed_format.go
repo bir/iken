@@ -54,7 +54,7 @@ func (cf FixedFormatter) formatWholePartWithSeparators(wholePart int64) string {
 	var result strings.Builder
 
 	length := len(wholeStr)
-	for i := 0; i < length; i++ {
+	for i := range length {
 		if i > 0 && (length-i)%3 == 0 {
 			result.WriteString(cf.thousandSep)
 		}
@@ -78,7 +78,7 @@ func (cf FixedFormatter) formatFractionalPart(fractionalPart int64) string {
 	offset := Power10(cf.precision) / cf.factor
 
 	for offset > 1 {
-		fractionalStr += "0"
+		fractionalStr += "0" //nolint:perfsprint
 		offset /= base
 	}
 
