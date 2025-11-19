@@ -403,18 +403,10 @@ func convertUUID(s string) (uuid.UUID, bool, error) {
 }
 
 func splitAndAppend(dest []string, source string) []string {
-	if strings.Contains(source, ",") {
-		for v := range strings.SplitSeq(source, ",") {
-			if v != "" {
-				dest = append(dest, v)
-			}
+	for v := range strings.SplitSeq(source, ",") {
+		if v != "" {
+			dest = append(dest, v)
 		}
-
-		return dest
-	}
-
-	if source != "" {
-		return append(dest, source)
 	}
 
 	return dest
