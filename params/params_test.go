@@ -419,8 +419,8 @@ func TestMatrix(t *testing.T) {
 	}{
 		{
 			Name:              "String",
-			TestValue:         "foo",
-			TestValueAsString: "foo",
+			TestValue:         "foo,bar",
+			TestValueAsString: "foo,bar",
 			Methods: map[ParamSource]func(r *http.Request, name string, required bool) (any, bool, error){
 				ParamSourcePath: func(r *http.Request, name string, required bool) (any, bool, error) {
 					return GetStringPath(r, name, required)
