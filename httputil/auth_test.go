@@ -331,3 +331,352 @@ func TestBasicAuth(t *testing.T) {
 		})
 	}
 }
+
+func strClientAuth(_ context.Context, user string) (string, error) {
+	switch user {
+	case "good":
+		return "token", nil
+	case "bad":
+		return "", ErrBad
+	}
+
+	return "", httputil.ErrCannotAuthenticate
+}
+
+func failClientAuth(_ context.Context, _ string) (string, error) {
+	return "", ErrBad
+}
+
+func onlyUser(name string) httputil.ClientTokenAuthenticatorFunc[string] {
+	return func(_ context.Context, user string) (string, error) {
+		if user == name {
+			return "token", nil
+		}
+
+		return "", httputil.ErrCannotAuthenticate
+	}
+}
+
+func basicClientAuth(_ context.Context, user string) (string, string, error) {
+	switch user {
+	case "good":
+		return "u", "p", nil
+	case "bad":
+		return "", "", ErrBad
+	}
+
+	return "", "", httputil.ErrCannotAuthenticate
+}
+
+func cookieClientAuth(_ context.Context, user string) (*http.Cookie, error) {
+	switch user {
+	case "good":
+		return &http.Cookie{Name: "session", Value: "token"}, nil
+	case "nil":
+		return nil, nil
+	case "bad":
+		return nil, ErrBad
+	}
+
+	return nil, httputil.ErrCannotAuthenticate
+}
+
+func TestHeaderClientAuth(t *testing.T) {
+	type testCase struct {
+		name string
+		key  string
+		user string
+		want string
+		err  error
+	}
+	tests := []testCase{
+		{"Good", "X-Auth", "good", "token", nil},
+		{"Bad", "X-Auth", "bad", "", ErrBad},
+		{"Couldnt", "X-Auth", "other", "", httputil.ErrCannotAuthenticate},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest("FOO", "/asdf", nil)
+			inner := &http.Client{}
+
+			got, err := httputil.HeaderClientAuth(tt.key, strClientAuth)(r, inner, tt.user)
+			if tt.err != nil {
+				assert.ErrorIs(t, err, tt.err)
+			} else {
+				require.NoError(t, err)
+				assert.Same(t, inner, got)
+			}
+
+			assert.Equal(t, tt.want, r.Header.Get(tt.key))
+		})
+	}
+}
+
+func TestBearerClientAuth(t *testing.T) {
+	type testCase struct {
+		name string
+		key  string
+		user string
+		want string
+		err  error
+	}
+	tests := []testCase{
+		{"Good", "Authorization", "good", "Bearer token", nil},
+		{"Bad", "Authorization", "bad", "", ErrBad},
+		{"Couldnt", "Authorization", "other", "", httputil.ErrCannotAuthenticate},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest("FOO", "/asdf", nil)
+			inner := &http.Client{}
+
+			got, err := httputil.BearerClientAuth(tt.key, strClientAuth)(r, inner, tt.user)
+			if tt.err != nil {
+				assert.ErrorIs(t, err, tt.err)
+			} else {
+				require.NoError(t, err)
+				assert.Same(t, inner, got)
+			}
+
+			assert.Equal(t, tt.want, r.Header.Get(tt.key))
+		})
+	}
+}
+
+func TestQueryClientAuth(t *testing.T) {
+	type testCase struct {
+		name string
+		key  string
+		user string
+		want string
+		err  error
+	}
+	tests := []testCase{
+		{"Good", "auth", "good", "token", nil},
+		{"Bad", "auth", "bad", "", ErrBad},
+		{"Couldnt", "auth", "other", "", httputil.ErrCannotAuthenticate},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest("FOO", "/asdf", nil)
+			inner := &http.Client{}
+
+			got, err := httputil.QueryClientAuth(tt.key, strClientAuth)(r, inner, tt.user)
+			if tt.err != nil {
+				assert.ErrorIs(t, err, tt.err)
+			} else {
+				require.NoError(t, err)
+				assert.Same(t, inner, got)
+			}
+
+			assert.Equal(t, tt.want, r.URL.Query().Get(tt.key))
+		})
+	}
+}
+
+func TestBasicClientAuth(t *testing.T) {
+	type testCase struct {
+		name     string
+		user     string
+		wantUser string
+		wantPass string
+		err      error
+	}
+	tests := []testCase{
+		{"Good", "good", "u", "p", nil},
+		{"Bad", "bad", "", "", ErrBad},
+		{"Couldnt", "other", "", "", httputil.ErrCannotAuthenticate},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest("FOO", "/asdf", nil)
+			inner := &http.Client{}
+
+			got, err := httputil.BasicClientAuth(basicClientAuth)(r, inner, tt.user)
+			if tt.err != nil {
+				assert.ErrorIs(t, err, tt.err)
+			} else {
+				require.NoError(t, err)
+				assert.Same(t, inner, got)
+			}
+
+			u, p, ok := r.BasicAuth()
+			if tt.err == nil {
+				assert.True(t, ok)
+				assert.Equal(t, tt.wantUser, u)
+				assert.Equal(t, tt.wantPass, p)
+			} else {
+				assert.False(t, ok)
+			}
+		})
+	}
+}
+
+func TestCookieClientAuth(t *testing.T) {
+	type testCase struct {
+		name    string
+		user    string
+		want    string
+		wantErr error
+	}
+	tests := []testCase{
+		{"Good", "good", "token", nil},
+		{"Nil", "nil", "", nil},
+		{"Bad", "bad", "", ErrBad},
+		{"Couldnt", "other", "", httputil.ErrCannotAuthenticate},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest("FOO", "/asdf", nil)
+			inner := &http.Client{}
+
+			got, err := httputil.CookieClientAuth(cookieClientAuth)(r, inner, tt.user)
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+				assert.Same(t, inner, got)
+			}
+
+			cookie, cookieErr := r.Cookie("session")
+			if tt.want != "" {
+				require.NoError(t, cookieErr)
+				assert.Equal(t, tt.want, cookie.Value)
+			} else {
+				assert.ErrorIs(t, cookieErr, http.ErrNoCookie)
+			}
+		})
+	}
+}
+
+func TestWrapClientAuth(t *testing.T) {
+	inner := &http.Client{}
+	wrapped := &http.Client{}
+
+	fn := func(_ context.Context, in *http.Client, user string) (*http.Client, error) {
+		switch user {
+		case "good":
+			return wrapped, nil
+		case "bad":
+			return nil, ErrBad
+		}
+
+		return in, httputil.ErrCannotAuthenticate
+	}
+
+	type testCase struct {
+		name string
+		user string
+		want *http.Client
+		err  error
+	}
+	tests := []testCase{
+		{"good", "good", wrapped, nil},
+		{"bad", "bad", inner, ErrBad},
+		{"couldnt", "other", inner, httputil.ErrCannotAuthenticate},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest("FOO", "/asdf", nil)
+
+			got, err := httputil.WrapClientAuth(fn)(r, inner, tt.user)
+			if tt.err != nil {
+				assert.ErrorIs(t, err, tt.err)
+			} else {
+				require.NoError(t, err)
+				assert.Same(t, tt.want, got)
+			}
+		})
+	}
+}
+
+func TestClientSecurityGroup_Auth(t *testing.T) {
+	inner := &http.Client{}
+
+	type testCase struct {
+		name  string
+		g     httputil.ClientSecurityGroup[string]
+		user  string
+		wantA string
+		wantB string
+		err   error
+	}
+	tests := []testCase{
+		{
+			"all succeed",
+			httputil.ClientSecurityGroup[string]{
+				httputil.HeaderClientAuth("X-A", strClientAuth),
+				httputil.HeaderClientAuth("X-B", strClientAuth),
+			},
+			"good", "token", "token", nil,
+		},
+		{
+			"failure returns inner and leaves request unmodified",
+			httputil.ClientSecurityGroup[string]{
+				httputil.HeaderClientAuth("X-A", strClientAuth),
+				httputil.HeaderClientAuth("X-B", failClientAuth),
+			},
+			"good", "", "", ErrBad,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest("FOO", "/asdf", nil)
+
+			got, err := tt.g.Auth(r, inner, tt.user)
+			if tt.err != nil {
+				assert.ErrorIs(t, err, tt.err)
+			} else {
+				require.NoError(t, err)
+				assert.Same(t, inner, got)
+			}
+
+			assert.Equal(t, tt.wantA, r.Header.Get("X-A"))
+			assert.Equal(t, tt.wantB, r.Header.Get("X-B"))
+		})
+	}
+}
+
+func TestClientSecurityGroups_Auth(t *testing.T) {
+	inner := &http.Client{}
+
+	groups := httputil.ClientSecurityGroups[string]{
+		{httputil.HeaderClientAuth("X-A", onlyUser("a"))},
+		{httputil.HeaderClientAuth("X-B", onlyUser("b"))},
+	}
+	failing := httputil.ClientSecurityGroups[string]{
+		{httputil.HeaderClientAuth("X-A", failClientAuth)},
+		{httputil.HeaderClientAuth("X-B", onlyUser("b"))},
+	}
+
+	type testCase struct {
+		name  string
+		s     httputil.ClientSecurityGroups[string]
+		user  string
+		wantA string
+		wantB string
+		err   error
+	}
+	tests := []testCase{
+		{"first group succeeds", groups, "a", "token", "", nil},
+		{"falls through to a later group", groups, "b", "", "token", nil},
+		{"none can authenticate", groups, "c", "", "", httputil.ErrCannotAuthenticate},
+		{"true failure stops iteration", failing, "b", "", "", ErrBad},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest("FOO", "/asdf", nil)
+
+			got, err := tt.s.Auth(r, inner, tt.user)
+			if tt.err != nil {
+				assert.ErrorIs(t, err, tt.err)
+			} else {
+				require.NoError(t, err)
+				assert.Same(t, inner, got)
+			}
+
+			assert.Equal(t, tt.wantA, r.Header.Get("X-A"))
+			assert.Equal(t, tt.wantB, r.Header.Get("X-B"))
+		})
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -29,6 +30,10 @@ const (
 	// ErrMissingAuthorizer is caused by internal configuration errors when evaluating authorization.
 	ErrMissingAuthorizer = AuthError("missing authenticator")
 
+	// ErrCannotAuthenticate indicates an authenticator could not provide credentials for the user.
+	// ClientSecurityGroups treats it as "try the next group" rather than a hard failure.
+	ErrCannotAuthenticate = AuthError("could not authenticate request")
+
 	// BasicAuthPrefix as defined by https://datatracker.ietf.org/doc/html/rfc7617
 	BasicAuthPrefix = "Basic "
 
@@ -51,6 +56,32 @@ type TokenAuthenticatorFunc[T any] func(ctx context.Context, token string) (T, e
 
 // BasicAuthenticatorFunc is the signature of a function used to authenticate a request given use user/pass.
 type BasicAuthenticatorFunc[T any] func(ctx context.Context, user, pass string) (T, error)
+
+// ClientAuthenticateFunc is the signature of a function used to add authentication to an outbound HTTP request.
+// It also has an opportunity to wrap the httpClient to be used for the request. Should return [ErrCannotAuthenticate]
+// if the method was not able to provide authorization for this user.
+type ClientAuthenticateFunc[T any] func(r *http.Request, innerClient *http.Client, user T) (*http.Client, error)
+
+// ClientTokenAuthenticatorFunc is the signature of a function used to determine the token that should be added
+// to an outbound HTTP request as authentication. Should return [ErrCannotAuthenticate] if the method was not able to
+// provide authorization for this user.
+type ClientTokenAuthenticatorFunc[T any] func(ctx context.Context, user T) (string, error)
+
+// ClientBasicAuthenticatorFunc is the signature of a function used to determine the username and password
+// that should be used to add Basic authentication to an outbound HTTP request. Should return [ErrCannotAuthenticate]
+// if the method was not able to provide authorization for this user.
+type ClientBasicAuthenticatorFunc[T any] func(ctx context.Context, user T) (string, string, error)
+
+// ClientCookieAuthenticatorFunc is the signature of a function used to determine the cookie that should be added
+// to an outbound HTTP request.  Should return [ErrCannotAuthenticate] if the method was not able to provide
+// authorization for this user.
+type ClientCookieAuthenticatorFunc[T any] func(ctx context.Context, user T) (*http.Cookie, error)
+
+// ClientWrappingAuthenticatorFunc is the signature of a function used to wrap an http client so that it will
+// add authentication. This is intended for integration with x/oauth2.  Should return [ErrCannotAuthenticate] if the
+// method was not able to provide authorization for this user.
+type ClientWrappingAuthenticatorFunc[T any] func(
+	ctx context.Context, innerClient *http.Client, user T) (*http.Client, error)
 
 // AuthorizeFunc is the signature of a function used to authorize a request.  If unable
 // to authorize the user it returns an error.
@@ -77,6 +108,19 @@ func HeaderAuth[T any](key string, fn TokenAuthenticatorFunc[T]) AuthenticateFun
 	}
 }
 
+func HeaderClientAuth[T any](key string, fn ClientTokenAuthenticatorFunc[T]) ClientAuthenticateFunc[T] {
+	return func(r *http.Request, inner *http.Client, user T) (*http.Client, error) {
+		token, err := fn(r.Context(), user)
+		if err != nil {
+			return nil, err
+		}
+
+		r.Header.Set(key, token)
+
+		return inner, nil
+	}
+}
+
 const bearerAuthPrefix = "Bearer "
 
 func BearerAuth[T any](key string, tokenAuth TokenAuthenticatorFunc[T]) AuthenticateFunc[T] {
@@ -92,6 +136,19 @@ func BearerAuth[T any](key string, tokenAuth TokenAuthenticatorFunc[T]) Authenti
 	}
 }
 
+func BearerClientAuth[T any](key string, fn ClientTokenAuthenticatorFunc[T]) ClientAuthenticateFunc[T] {
+	return func(r *http.Request, inner *http.Client, user T) (*http.Client, error) {
+		token, err := fn(r.Context(), user)
+		if err != nil {
+			return nil, err
+		}
+
+		r.Header.Set(key, bearerAuthPrefix+token)
+
+		return inner, nil
+	}
+}
+
 func QueryAuth[T any](key string, fn TokenAuthenticatorFunc[T]) AuthenticateFunc[T] {
 	return func(r *http.Request) (T, error) {
 		var empty T
@@ -102,6 +159,22 @@ func QueryAuth[T any](key string, fn TokenAuthenticatorFunc[T]) AuthenticateFunc
 		}
 
 		return fn(r.Context(), token)
+	}
+}
+
+func QueryClientAuth[T any](key string, fn ClientTokenAuthenticatorFunc[T]) ClientAuthenticateFunc[T] {
+	return func(r *http.Request, inner *http.Client, user T) (*http.Client, error) {
+		token, err := fn(r.Context(), user)
+		if err != nil {
+			return nil, err
+		}
+
+		q := r.URL.Query()
+		q.Add(key, token)
+
+		r.URL.RawQuery = q.Encode()
+
+		return inner, nil
 	}
 }
 
@@ -133,6 +206,19 @@ func BasicAuth[T any](authFn BasicAuthenticatorFunc[T]) AuthenticateFunc[T] {
 	}
 }
 
+func BasicClientAuth[T any](fn ClientBasicAuthenticatorFunc[T]) ClientAuthenticateFunc[T] {
+	return func(r *http.Request, inner *http.Client, user T) (*http.Client, error) {
+		username, password, err := fn(r.Context(), user)
+		if err != nil {
+			return nil, err
+		}
+
+		r.SetBasicAuth(username, password)
+
+		return inner, nil
+	}
+}
+
 func CookieAuth[T any](key string, fn TokenAuthenticatorFunc[T]) AuthenticateFunc[T] {
 	return func(r *http.Request) (T, error) {
 		var empty T
@@ -143,6 +229,32 @@ func CookieAuth[T any](key string, fn TokenAuthenticatorFunc[T]) AuthenticateFun
 		}
 
 		return fn(r.Context(), cookie.Value)
+	}
+}
+
+func CookieClientAuth[T any](fn ClientCookieAuthenticatorFunc[T]) ClientAuthenticateFunc[T] {
+	return func(r *http.Request, inner *http.Client, user T) (*http.Client, error) {
+		cookie, err := fn(r.Context(), user)
+		if err != nil {
+			return nil, err
+		}
+
+		if cookie != nil {
+			r.AddCookie(cookie)
+		}
+
+		return inner, nil
+	}
+}
+
+func WrapClientAuth[T any](fn ClientWrappingAuthenticatorFunc[T]) ClientAuthenticateFunc[T] {
+	return func(r *http.Request, inner *http.Client, user T) (*http.Client, error) {
+		client, err := fn(r.Context(), inner, user)
+		if err != nil {
+			return nil, err
+		}
+
+		return client, nil
 	}
 }
 
@@ -216,4 +328,47 @@ func (s SecurityGroups[T]) Auth(r *http.Request) (T, error) {
 	}
 
 	return user, err
+}
+
+// ClientSecurityGroup are valid if all the authenticate functions succeed.
+type ClientSecurityGroup[T any] []ClientAuthenticateFunc[T]
+
+// Auth authenticates a client request with all the authhenticate functions or returns the first failure.
+func (s ClientSecurityGroup[T]) Auth(r *http.Request, innerClient *http.Client, u T) (*http.Client, error) {
+	var err error
+	outerClient := innerClient
+	modifiedReq := r.Clone(r.Context())
+
+	for _, a := range s {
+		outerClient, err = a(modifiedReq, outerClient, u)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	*r = *modifiedReq
+
+	return outerClient, nil
+}
+
+// ClientSecurityGroups are valid if ANY group is valid.
+type ClientSecurityGroups[T any] []ClientSecurityGroup[T]
+
+// Auth authenticates a client request with the first group that successfully authenticates, or returns
+// [ErrCannotAuthenticate].
+func (s ClientSecurityGroups[T]) Auth(r *http.Request, innerClient *http.Client, u T) (*http.Client, error) {
+	for _, a := range s {
+		outerClient, err := a.Auth(r, innerClient, u)
+		if errors.Is(err, ErrCannotAuthenticate) {
+			continue
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		return outerClient, nil
+	}
+
+	return nil, ErrCannotAuthenticate
 }

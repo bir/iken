@@ -78,7 +78,7 @@ func (cf FixedFormatter) formatFractionalPart(fractionalPart int64) string {
 	offset := Power10(cf.precision) / cf.factor
 
 	for offset > 1 {
-		fractionalStr += "0" //nolint:perfsprint
+		fractionalStr += "0" //nolint:perfsprint,modernize
 		offset /= base
 	}
 
