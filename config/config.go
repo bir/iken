@@ -100,7 +100,7 @@ func parseTag(tag string) error {
 // object must be a pointer to a struct.  See ExampleLoad for simple example.
 func Load(cfg any) error {
 	v := reflect.ValueOf(cfg)
-	if v.Kind() != reflect.Ptr || v.IsZero() {
+	if v.Kind() != reflect.Pointer || v.IsZero() {
 		return ErrInvalidConfigObject
 	}
 
@@ -117,7 +117,7 @@ func Load(cfg any) error {
 
 	v = reflect.Indirect(v)
 
-	for i := 0; i < v.NumField(); i++ {
+	for i := range v.NumField() {
 		f := v.Type().Field(i)
 
 		tag := f.Tag.Get(TagName)

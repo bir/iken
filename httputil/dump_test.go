@@ -14,12 +14,6 @@ import (
 	"time"
 )
 
-type eofReader struct{}
-
-func (n eofReader) Close() error { return nil }
-
-func (n eofReader) Read([]byte) (int, error) { return 0, io.EOF }
-
 type dumpTest struct {
 	Name string
 	// Either Req or GetReq can be set/nil but not both.
@@ -49,7 +43,7 @@ var dumpTests = []dumpTest{
 	{
 		Name: "HTTP/1.1 => chunked coding; body; empty trailer",
 		Req: &http.Request{
-			Method: "GET",
+			Method: http.MethodGet,
 			URL: &url.URL{
 				Scheme: "http",
 				Host:   "www.google.com",
@@ -57,22 +51,22 @@ var dumpTests = []dumpTest{
 			},
 			ProtoMajor:       1,
 			ProtoMinor:       1,
-			TransferEncoding: []string{"chunked"},
+			TransferEncoding: []string{ChunkedEncoding},
 		},
 
 		Body: []byte("abcdef"),
 
 		WantHeader: map[string]string{
-			"GET":               "/search HTTP/1.1",
+			http.MethodGet:      "/search HTTP/1.1",
 			"Host":              "www.google.com",
-			"Transfer-Encoding": "chunked",
+			"Transfer-Encoding": ChunkedEncoding,
 		},
 		WantBody: chunk("abcdef") + chunk(""),
 	},
 	{
 		Name: "Verify that DumpRequest preserves the HTTP version number, doesn't add a Host",
 		Req: &http.Request{
-			Method:     "GET",
+			Method:     http.MethodGet,
 			URL:        mustParseURL("/foo"),
 			ProtoMajor: 1,
 			ProtoMinor: 0,
@@ -82,8 +76,8 @@ var dumpTests = []dumpTest{
 		},
 
 		WantHeader: map[string]string{
-			"GET":   "/foo HTTP/1.0",
-			"X-Foo": "X-Bar",
+			http.MethodGet: "/foo HTTP/1.0",
+			"X-Foo":        "X-Bar",
 		},
 	},
 	{
@@ -100,8 +94,8 @@ var dumpTests = []dumpTest{
 		},
 
 		WantHeader: map[string]string{
-			"GET":  "/search HTTP/1.1",
-			"Host": "www.google.com",
+			http.MethodGet: "/search HTTP/1.1",
+			"Host":         "www.google.com",
 		},
 		MustError: true,
 	},
@@ -119,15 +113,15 @@ var dumpTests = []dumpTest{
 		},
 
 		WantHeader: map[string]string{
-			"GET":  "/search HTTP/1.1",
-			"Host": "www.google.com",
+			http.MethodGet: "/search HTTP/1.1",
+			"Host":         "www.google.com",
 		},
 		MustError: true,
 	},
 	{
 		Name: "Request with Body > 8196 (default buffer size)",
 		Req: &http.Request{
-			Method: "POST",
+			Method: http.MethodPost,
 			URL: &url.URL{
 				Scheme: "http",
 				Host:   "post.tld",
@@ -144,7 +138,7 @@ var dumpTests = []dumpTest{
 
 		Body: bytes.Repeat([]byte("a"), 8193),
 		WantHeader: map[string]string{
-			"POST":           "/ HTTP/1.1",
+			http.MethodPost:  "/ HTTP/1.1",
 			"Host":           "post.tld",
 			"Content-Length": "8193",
 		},
@@ -159,8 +153,8 @@ var dumpTests = []dumpTest{
 				"User-Agent: blah\r\n\r\n")
 		},
 		WantHeader: map[string]string{
-			"GET":        "http://foo.com/ HTTP/1.1",
-			"User-Agent": "blah",
+			http.MethodGet: "http://foo.com/ HTTP/1.1",
+			"User-Agent":   "blah",
 		},
 	},
 
@@ -173,7 +167,7 @@ var dumpTests = []dumpTest{
 				"\r\nkey1=name1&key2=name2")
 		},
 		WantHeader: map[string]string{
-			"POST":           "/v2/api/?login HTTP/1.1",
+			http.MethodPost:  "/v2/api/?login HTTP/1.1",
 			"Host":           "passport.myhost.com",
 			"Content-Length": "3",
 		},
@@ -188,7 +182,7 @@ var dumpTests = []dumpTest{
 				"\r\nkey1=name1&key2=name2")
 		},
 		WantHeader: map[string]string{
-			"POST":           "/v2/api/?login HTTP/1.1",
+			http.MethodPost:  "/v2/api/?login HTTP/1.1",
 			"Host":           "passport.myhost.com",
 			"Content-Length": "0",
 		},
@@ -203,8 +197,8 @@ var dumpTests = []dumpTest{
 				"\r\nkey1=name1&key2=name2")
 		},
 		WantHeader: map[string]string{
-			"POST": "/v2/api/?login HTTP/1.1",
-			"Host": "passport.myhost.com",
+			http.MethodPost: "/v2/api/?login HTTP/1.1",
+			"Host":          "passport.myhost.com",
 		},
 	},
 	{
@@ -215,8 +209,8 @@ var dumpTests = []dumpTest{
 				"\r\nkey1=name1&key2=name2")
 		},
 		WantHeader: map[string]string{
-			"POST": "/v2/api/?login HTTP/1.1",
-			"Host": "passport.myhost.com",
+			http.MethodPost: "/v2/api/?login HTTP/1.1",
+			"Host":          "passport.myhost.com",
 		},
 	},
 }
@@ -229,29 +223,7 @@ func TestDumpRequest(t *testing.T) {
 			continue
 		}
 
-		freshReq := func(ti dumpTest) *http.Request {
-			req := ti.Req
-			if req == nil {
-				req = ti.GetReq()
-			}
-
-			if req.Header == nil {
-				req.Header = make(http.Header)
-			}
-
-			if ti.Body == nil {
-				return req
-			}
-			switch b := ti.Body.(type) {
-			case []byte:
-				req.Body = io.NopCloser(bytes.NewReader(b))
-			case func() io.ReadCloser:
-				req.Body = b()
-			default:
-				t.Fatalf("Test %q: unsupported Body of %T", tt.Name, ti.Body)
-			}
-			return req
-		}
+		freshReq := requestMaker(t, tt)
 
 		req := freshReq(tt)
 		got := DumpHeader(req)
@@ -279,7 +251,6 @@ func TestDumpRequest(t *testing.T) {
 			}
 			continue
 		}
-
 	}
 
 	// Validate we haven't leaked any goroutines.
@@ -300,10 +271,42 @@ func TestDumpRequest(t *testing.T) {
 	t.Errorf("Unexpectedly large number of new goroutines: %d new: %s", dg, buf)
 }
 
+func requestMaker(t *testing.T, tt dumpTest) func(ti dumpTest) *http.Request {
+	t.Helper()
+
+	return func(ti dumpTest) *http.Request {
+		t.Helper()
+
+		req := ti.Req
+		if req == nil {
+			req = ti.GetReq()
+		}
+
+		if req.Header == nil {
+			req.Header = make(http.Header)
+		}
+
+		if ti.Body == nil {
+			return req
+		}
+		switch b := ti.Body.(type) {
+		case []byte:
+			req.Body = io.NopCloser(bytes.NewReader(b))
+		case func() io.ReadCloser:
+			req.Body = b()
+		default:
+			t.Fatalf("Test %q: unsupported Body of %T", tt.Name, ti.Body)
+		}
+		return req
+	}
+}
+
 // deadline returns the time which is needed before t.Deadline()
 // if one is configured, and it is s greater than needed in the future,
 // otherwise defaultDelay from the current time.
 func deadline(t *testing.T, defaultDelay, needed time.Duration) time.Time {
+	t.Helper()
+
 	if dl, ok := t.Deadline(); ok {
 		if dl = dl.Add(-needed); dl.After(time.Now()) {
 			// Allow an arbitrarily long delay.

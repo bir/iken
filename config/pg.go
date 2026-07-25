@@ -31,6 +31,7 @@ func appendIf(aa []string, key, value string) []string {
 // Set ApplicationName to override the value.
 func GetPgDBString(base string) string {
 	var pairs []string
+
 	pairs = appendIf(pairs, "host", viper.GetString(base+"_HOST"))
 	pairs = appendIf(pairs, "port", viper.GetString(base+"_PORT"))
 	pairs = appendIf(pairs, "user", viper.GetString(base+"_USER"))

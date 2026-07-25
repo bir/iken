@@ -83,7 +83,7 @@ func TestErrorHandler(t *testing.T) {
 
 			var log errorLog
 			err := json.Unmarshal(logOutput.Bytes(), &log)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, test.logMessage, log.Msg, logOutput.String())
 		})
 	}

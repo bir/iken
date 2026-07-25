@@ -15,45 +15,42 @@ func TestNoOpCache(t *testing.T) {
 	c := cache.NewNoOp[string, int]()
 	// Empty
 	v, ok := c.Get("a")
-	assert.Equal(t, 0, v)
-	assert.Equal(t, false, ok)
-
+	assert.Zero(t, v)
+	assert.False(t, ok)
 	kk := c.Keys()
-	assert.Equal(t, 0, len(kk))
+	assert.Empty(t, kk)
 
 	// New Value
 	c.Set("a", 1)
 	v, ok = c.Get("a")
-	assert.Equal(t, 0, v)
-	assert.Equal(t, false, ok)
-
+	assert.Zero(t, v)
+	assert.False(t, ok)
 	kk = c.Keys()
-	assert.Equal(t, 0, len(kk))
+	assert.Empty(t, kk)
 
 	// Override
 	c.Set("a", 2)
 	v, ok = c.Get("a")
-	assert.Equal(t, 0, v)
-	assert.Equal(t, false, ok)
+	assert.Zero(t, v)
+	assert.False(t, ok)
 
 	// New Value
 	v, ok = c.Get("b")
-	assert.Equal(t, 0, v)
-	assert.Equal(t, false, ok)
+	assert.Zero(t, v)
+	assert.False(t, ok)
 
 	c.Set("b", 2)
 	v, ok = c.Get("b")
-	assert.Equal(t, 0, v)
-	assert.Equal(t, false, ok)
-
+	assert.Zero(t, v)
+	assert.False(t, ok)
 	kk = c.Keys()
-	assert.Equal(t, 0, len(kk))
+	assert.Empty(t, kk)
 
 	// Delete
 	c.Delete("a")
 
 	kk = c.Keys()
-	assert.Equal(t, 0, len(kk))
+	assert.Empty(t, kk)
 
 	c.Clear()
 }

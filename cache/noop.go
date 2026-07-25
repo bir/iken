@@ -15,7 +15,7 @@ func (c *NoOp[K, V]) Set(_ K, _ V) {
 
 // Get always returns !ok.
 func (c *NoOp[K, V]) Get(_ K) (out V, ok bool) { //nolint: ireturn,nonamedreturns
-	return
+	return out, ok
 }
 
 // Keys always returns nil array.

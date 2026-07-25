@@ -14,37 +14,36 @@ import (
 )
 
 type TestObject struct {
-	ID    string
-	Count int
+	ID    string `json:"id"`
+	Count int    `json:"count"`
 }
 
 func (p *TestObject) UnmarshalJSON(b []byte) error {
 	var requiredCheck map[string]any
 
-	if err := json.Unmarshal(b, &requiredCheck); err != nil {
+	err := json.Unmarshal(b, &requiredCheck)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("TestObject.UnmarshalJSON Required: `%v`: %w", string(b), err)}
 	}
 
 	var validationErrors validation.Errors
 
-	if _, ok := requiredCheck["ID"]; !ok {
+	_, ok := requiredCheck["ID"]
+	if !ok {
 		return validationErrors.Add("message_id", "missing required field")
 	}
 
 	type TestObjectJSON TestObject
 	var parseObject TestObjectJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("Message.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
 	*p = TestObject(parseObject)
 
 	return nil
-}
-
-func strP(s string) *string {
-	return &s
 }
 
 type BadIOReader struct {
@@ -64,11 +63,11 @@ func TestGetJSONBody(t *testing.T) {
 		wantErr bool
 	}{
 		{"no body", nil, nil, nil, true},
-		{"string", bytes.NewBufferString(`"foo"`), strP(""), strP("foo"), false},
-		{"invalid json", bytes.NewBufferString(`{"foo"`), strP(""), strP(""), true},
-		{"empty", bytes.NewBufferString(``), strP(""), strP(""), true},
-		{"EOF", &BadIOReader{io.EOF}, strP(""), strP(""), true},
-		{"read error", &BadIOReader{io.ErrClosedPipe}, strP(""), strP(""), true},
+		{"string", bytes.NewBufferString(`"foo"`), new(""), new("foo"), false},
+		{"invalid json", bytes.NewBufferString(`{"foo"`), new(""), new(""), true},
+		{"empty", bytes.NewBufferString(``), new(""), new(""), true},
+		{"EOF", &BadIOReader{io.EOF}, new(""), new(""), true},
+		{"read error", &BadIOReader{io.ErrClosedPipe}, new(""), new(""), true},
 		{"null body", bytes.NewBufferString(`null`), &TestObject{}, &TestObject{}, true},
 		{"validation error - bad ID type", bytes.NewBufferString(`{"ID":1}`), &TestObject{}, &TestObject{}, true},
 		{"validations error - no ID", bytes.NewBufferString(`{}`), &TestObject{}, &TestObject{}, true},

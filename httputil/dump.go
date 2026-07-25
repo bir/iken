@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+const ChunkedEncoding = "chunked"
+
 // Ported from go stdlib httputil.dump.  Tweaked to split the header and body into separate functions for more
 // flexible logging. Header is returned as a map[string]string for ease of handling.  Strictly a logging utility for
 // inbound requests.
@@ -22,7 +24,7 @@ func DumpHeader(req *http.Request) map[string]string {
 		reqURI = req.URL.RequestURI()
 	}
 
-	out[valueOrDefault(req.Method, "GET")] = fmt.Sprintf("%s HTTP/%d.%d", reqURI, req.ProtoMajor, req.ProtoMinor)
+	out[valueOrDefault(req.Method, http.MethodGet)] = fmt.Sprintf("%s HTTP/%d.%d", reqURI, req.ProtoMajor, req.ProtoMinor)
 
 	absRequestURI := strings.HasPrefix(req.RequestURI, "http://") || strings.HasPrefix(req.RequestURI, "https://")
 	if !absRequestURI {
@@ -66,7 +68,7 @@ func DumpBody(req *http.Request) ([]byte, error) {
 		return nil, err
 	}
 
-	chunked := len(req.TransferEncoding) > 0 && req.TransferEncoding[0] == "chunked"
+	chunked := len(req.TransferEncoding) > 0 && req.TransferEncoding[0] == ChunkedEncoding
 
 	var b bytes.Buffer
 

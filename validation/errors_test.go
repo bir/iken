@@ -43,7 +43,7 @@ func TestErrors_Add(t *testing.T) {
 			assert.Equal(t, tt.want, got.Error())
 
 			b, err := json.Marshal(got.Fields())
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			assert.Equal(t, tt.wantJson, string(b))
 		})
@@ -74,14 +74,14 @@ func TestErrors_GetErr(t *testing.T) {
 
 	_ = ee.Add("a", errB)
 
-	assert.NotNil(t, ee.GetErr())
+	assert.Error(t, ee.GetErr())
 	assert.Equal(t, "a: b.", ee.GetErr().Error())
 	assert.ErrorIs(t, ee.GetErr(), errB)
 }
 
 func TestErrors_New(t *testing.T) {
 	err := validation.New("a", "b")
-	assert.NotEmpty(t, err)
+	assert.Error(t, err)
 	assert.Equal(t, "a: b.", err.Error())
 }
 

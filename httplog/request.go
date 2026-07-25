@@ -75,6 +75,7 @@ func RequestLogger(shouldLog FnShouldLog) func(http.Handler) http.Handler { //no
 			start := now()
 
 			var logRequest, logRequestBody, logResponse bool
+
 			logRequest = true
 			toLogLevel := StatusToLogLevel
 

@@ -8,7 +8,6 @@ import (
 )
 
 func TestError_Error(t *testing.T) {
-	type fields struct{}
 	tests := []struct {
 		name     string
 		Message  string

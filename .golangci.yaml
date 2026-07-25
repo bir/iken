@@ -1,60 +1,58 @@
 version: "2"
 run:
-  go: "1.23"
-  tests: false
+  go: "1.26"
 linters:
   default: all
   disable:
     - depguard
+    - dupl
     - exhaustruct
+    - funlen
     - gochecknoglobals
-    - gocognit
-    - intrange
+    - gomodguard
     - ireturn
-    - wsl # in favor of wsl_v5
+    - lll
+    - mnd
+    - tagalign
+    - tagliatelle
+    - testpackage
+    - varnamelen
+    - wsl
   settings:
-    mnd:
-      ignored-numbers:
-        - "2"
     cyclop:
-      max-complexity: 18
-    varnamelen:
-      max-distance: 10
-      ignore-type-assert-ok: true
-      ignore-map-index-ok: true
-      ignore-decls:
-        - ok bool
-        - i int
-        - n int
-        - e error
-        - h http.Handler
-        - t time.Time
-        - v reflect.Value
-        - w io.Writer
-        - w http.ResponseWriter
-        - rw http.ResponseWriter
-        - r *http.Request
-        - wg sync.WaitGroup
-        - c chan
-        - op string
-        - l zerolog.Logger
-        - r io.Reader
-        - l zerolog.Context
-        - s string
-        - l string
-    wsl_v5:
-      disable:
-        - decl
+      max-complexity: 15
+    goconst:
+      ignore-string-values:
+        - 'Host'
+    paralleltest:
+      ignore-missing: true
   exclusions:
-    generated: lax
     presets:
       - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
-    paths:
-      - .*_gen.go$
-      - temp
+    rules:
+      - path: (.+)_test.go
+        linters:
+          - canonicalheader
+          - containedctx
+          - err113
+          - errcheck
+          - errchkjson
+          - forbidigo
+          - goconst
+          - godot
+          - gosec
+          - govet
+          - maintidx
+          - nilnil
+          - nlreturn
+          - noctx
+          - nonamedreturns
+          - perfsprint
+          - revive
+          - staticcheck
+          - testifylint
+          - wrapcheck
+          - wsl_v5
 formatters:
   enable:
     - goimports
@@ -69,3 +67,7 @@ formatters:
       custom-order: true
   exclusions:
     generated: disable
+
+output:
+  sort-order:
+    - file

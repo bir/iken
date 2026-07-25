@@ -28,16 +28,12 @@ func (f *FanOut[I]) Invoke(input I) {
 func (f *FanOut[I]) Process(p ProcessorFunc[I]) {
 	wg := sync.WaitGroup{}
 
-	for i := uint(0); i < f.workerCount; i++ {
-		wg.Add(1)
-
-		go func() {
+	for range f.workerCount {
+		wg.Go(func() {
 			for i := range f.inputs {
 				p(i)
 			}
-
-			wg.Done()
-		}()
+		})
 	}
 
 	wg.Wait()

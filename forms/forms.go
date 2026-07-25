@@ -46,10 +46,12 @@ func GetFile(r *http.Request, name string, required bool) (File, bool, error) {
 
 type LookupString func(key string) string
 
+const Null = "null"
+
 func GetString(lookup LookupString, name string, required bool) (string, bool, error) {
 	s := lookup(name)
 
-	if s == "null" {
+	if s == Null {
 		s = ""
 	}
 

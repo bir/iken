@@ -3,7 +3,7 @@ package httputil_test
 import (
 	"bufio"
 	"bytes"
-	"fmt"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -79,18 +79,18 @@ func TestNewWrapResponse(t *testing.T) {
 	assert.Error(t, err, "Hijack Not Implemented")
 }
 
-func NewFancy() fancyWriter {
-	return fancyWriter{ResponseRecorder: httptest.NewRecorder()}
-}
-
 type fancyWriter struct {
 	*httptest.ResponseRecorder
+}
+
+func NewFancy() fancyWriter {
+	return fancyWriter{ResponseRecorder: httptest.NewRecorder()}
 }
 
 func (_ fancyWriter) Flush() {}
 
 func (_ fancyWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	return nil, nil, fmt.Errorf("not implemented")
+	return nil, nil, errors.ErrUnsupported
 }
 
 func (w fancyWriter) ReadFrom(r io.Reader) (n int64, err error) {
