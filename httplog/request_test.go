@@ -75,7 +75,7 @@ func TestRequestLogger(t *testing.T) {
 			got := logOutput.String()
 
 			if len(got) < 1 {
-				assert.True(t, len(tt.want) < 1, "got empty data, expected logs")
+				assert.Empty(t, tt.want, "got empty data, expected logs")
 
 				return
 			}

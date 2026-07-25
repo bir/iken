@@ -17,13 +17,13 @@ import (
 )
 
 type Config struct {
-	LocalDebug bool           `env:"DEBUG, false"`
-	Port       int            `env:"PORT, 3000"`
-	Interval   time.Duration  `env:"INTERVAL"`
-	TimeZone   *time.Location `env:"TIMEZONE, America/Los_Angeles"`
-	DB         string         `env:"DB,,pg"`
-	MyUrl      *url.URL       `env:"MY_URL"`
-	Ignore     string         `env:"-" json:"-"`
+	LocalDebug bool           `json:"LocalDebug" env:"DEBUG, false"`
+	Port       int            `json:"Port" env:"PORT, 3000"`
+	Interval   time.Duration  `json:"Interval" env:"INTERVAL"`
+	TimeZone   *time.Location `json:"TimeZone" env:"TIMEZONE, America/Los_Angeles"`
+	DB         string         `json:"DB" env:"DB,,pg"`
+	MyURL      *url.URL       `json:"MyURL" env:"MY_URL"`
+	Ignore     string         `json:"-" env:"-"`
 }
 
 type InvalidConfig struct {
@@ -41,7 +41,7 @@ func TestSetup(t *testing.T) {
 	defaultConfigFile := config.File
 	b, _ := json.Marshal(Config{})
 	defaultConfig := string(b)
-	configWithService := fmt.Sprintf(`{"LocalDebug":true,"Port":1234,"Interval":0,"TimeZone":{},"DB":"host=1.2.3.4 user=user password=pass dbname=dbname application_name=%s","MyUrl":{"Scheme":"https","Opaque":"","User":null,"Host":"www.google.com","Path":"","RawPath":"","OmitHost":false,"ForceQuery":false,"RawQuery":"a=b","Fragment":"","RawFragment":""}}`, filepath.Base(os.Args[0]))
+	configWithService := fmt.Sprintf(`{"LocalDebug":true,"Port":1234,"Interval":0,"TimeZone":{},"DB":"host=1.2.3.4 user=user password=pass dbname=dbname application_name=%s","MyURL":{"Scheme":"https","Opaque":"","User":null,"Host":"www.google.com","Path":"","Fragment":"","RawQuery":"a=b","RawPath":"","RawFragment":"","ForceQuery":false,"OmitHost":false}}`, filepath.Base(os.Args[0]))
 
 	tests := []struct {
 		name    string
@@ -51,11 +51,11 @@ func TestSetup(t *testing.T) {
 		json    string
 		wantErr bool
 	}{
-		{"defaults", nil, &Config{}, nil, `{"LocalDebug":true,"Port":1234,"Interval":0,"TimeZone":{},"DB":"host=1.2.3.4 user=user password=pass dbname=dbname application_name=test","MyUrl":{"Scheme":"https","Opaque":"","User":null,"Host":"www.google.com","Path":"","RawPath":"","OmitHost":false,"ForceQuery":false,"RawQuery":"a=b","Fragment":"","RawFragment":""}}`, false},
-		{"envOverride", nil, &Config{}, map[string]string{"INTERVAL": "15s", "DB_PORT": "1", "DB_MAX_CONN": "99", "DB_SSLMODE": "funky"}, `{"LocalDebug":true,"Port":1234,"Interval":15000000000,"TimeZone":{},"DB":"host=1.2.3.4 port=1 user=user password=pass dbname=dbname sslmode=funky pool_max_conns=99 application_name=test","MyUrl":{"Scheme":"https","Opaque":"","User":null,"Host":"www.google.com","Path":"","RawPath":"","OmitHost":false,"ForceQuery":false,"RawQuery":"a=b","Fragment":"","RawFragment":""}}`, false},
-		{"EmptyEnv", func() { config.File = ".envEMPTY" }, &Config{}, nil, `{"LocalDebug":false,"Port":3000,"Interval":0,"TimeZone":{},"DB":"","MyUrl":null}`, false},
-		{"InvalidTZ", nil, &Config{}, map[string]string{"TIMEZONE": "FOO"}, `{"LocalDebug":true,"Port":1234,"Interval":0,"TimeZone":null,"DB":"host=1.2.3.4 user=user password=pass dbname=dbname application_name=test","MyUrl":{"Scheme":"https","Opaque":"","User":null,"Host":"www.google.com","Path":"","RawPath":"","OmitHost":false,"ForceQuery":false,"RawQuery":"a=b","Fragment":"","RawFragment":""}}`, true},
-		{"InvalidURL", nil, &Config{}, map[string]string{"MY_URL": "%"}, `{"LocalDebug":true,"Port":1234,"Interval":0,"TimeZone":{},"DB":"host=1.2.3.4 user=user password=pass dbname=dbname application_name=test","MyUrl":null}`, true},
+		{"defaults", nil, &Config{}, nil, `{"LocalDebug":true,"Port":1234,"Interval":0,"TimeZone":{},"DB":"host=1.2.3.4 user=user password=pass dbname=dbname application_name=test","MyURL":{"Scheme":"https","Opaque":"","User":null,"Host":"www.google.com","Path":"","Fragment":"","RawQuery":"a=b","RawPath":"","RawFragment":"","ForceQuery":false,"OmitHost":false}}`, false},
+		{"envOverride", nil, &Config{}, map[string]string{"INTERVAL": "15s", "DB_PORT": "1", "DB_MAX_CONN": "99", "DB_SSLMODE": "funky"}, `{"LocalDebug":true,"Port":1234,"Interval":15000000000,"TimeZone":{},"DB":"host=1.2.3.4 port=1 user=user password=pass dbname=dbname sslmode=funky pool_max_conns=99 application_name=test","MyURL":{"Scheme":"https","Opaque":"","User":null,"Host":"www.google.com","Path":"","Fragment":"","RawQuery":"a=b","RawPath":"","RawFragment":"","ForceQuery":false,"OmitHost":false}}`, false},
+		{"EmptyEnv", func() { config.File = ".envEMPTY" }, &Config{}, nil, `{"LocalDebug":false,"Port":3000,"Interval":0,"TimeZone":{},"DB":"","MyURL":null}`, false},
+		{"InvalidTZ", nil, &Config{}, map[string]string{"TIMEZONE": "FOO"}, `{"LocalDebug":true,"Port":1234,"Interval":0,"TimeZone":null,"DB":"host=1.2.3.4 user=user password=pass dbname=dbname application_name=test","MyURL":{"Scheme":"https","Opaque":"","User":null,"Host":"www.google.com","Path":"","Fragment":"","RawQuery":"a=b","RawPath":"","RawFragment":"","ForceQuery":false,"OmitHost":false}}`, true},
+		{"InvalidURL", nil, &Config{}, map[string]string{"MY_URL": "%"}, `{"LocalDebug":true,"Port":1234,"Interval":0,"TimeZone":{},"DB":"host=1.2.3.4 user=user password=pass dbname=dbname application_name=test","MyURL":null}`, true},
 		{"BadConfig", nil, nil, nil, `null`, true},
 		{"BadFile", func() { config.File = ".envBAD" }, &Config{}, nil, defaultConfig, true},
 		{"BadResolver", func() { config.Resolvers = config.ResolverMap{} }, &Config{}, nil, defaultConfig, true},
@@ -79,7 +79,8 @@ func TestSetup(t *testing.T) {
 				t.Setenv(k, v)
 			}
 
-			if err := config.Load(tt.cfg); (err != nil) != tt.wantErr {
+			err := config.Load(tt.cfg)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Load() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -136,7 +137,8 @@ func TestComplex(t *testing.T) {
 				t.Setenv(k, v)
 			}
 
-			if err := config.Load(tt.cfg); (err != nil) != tt.wantErr {
+			err := config.Load(tt.cfg)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Load() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -155,7 +157,7 @@ func TestComplex(t *testing.T) {
 type ExampleConfig struct {
 	DebugMode bool     `env:"DEBUG, false"`
 	Port      int      `env:"PORT, 3000"`
-	DB        string   `env:"DB,localhost,pg"`
+	DB        string   `env:"DB,,pg"`
 	Test      []string `env:"TEST_ARRAY"`
 }
 
@@ -165,6 +167,11 @@ func ExampleLoad() {
 	fmt.Printf("DebugMode=%v\n", cfg.DebugMode)
 	fmt.Printf("Port=%v\n", cfg.Port)
 	fmt.Printf("DB=%v\n", cfg.DB)
+
+	// Output:
+	// DebugMode=false
+	// Port=3000
+	// DB=
 }
 
 func TestFoo(t *testing.T) {
@@ -173,8 +180,10 @@ func TestFoo(t *testing.T) {
 
 	cfg := ExampleConfig{}
 
-	_ = config.Load(&cfg)
-	test := viper.GetStringSlice("TEST_ARRAY")
+	err := config.Load(&cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	fmt.Printf("TEST=%#v\n", cfg.Test)
-	fmt.Printf("test=%#v\n", test)
 }

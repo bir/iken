@@ -69,6 +69,7 @@ func WithStack(e any, skip int) error {
 	}
 
 	var pcs [maxDepth]uintptr
+
 	n := runtime.Callers(skip+stackOffset, pcs[:])
 
 	var st stack = pcs[0:n]

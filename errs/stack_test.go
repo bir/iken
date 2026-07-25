@@ -108,6 +108,8 @@ type StackTest struct {
 }
 
 func (test StackTest) testErr(t *testing.T) bool {
+	t.Helper()
+
 	if test.err == nil {
 		if test.isNil {
 			return false
@@ -124,6 +126,8 @@ func (test StackTest) testErr(t *testing.T) bool {
 }
 
 func (test StackTest) testFrameString(t *testing.T, ff []errs.Frame) {
+	t.Helper()
+
 	if len(ff) != len(test.stack) {
 		t.Errorf("len(stack) expected %#v, got %#v", len(test.stack), len(ff))
 		return
@@ -137,6 +141,8 @@ func (test StackTest) testFrameString(t *testing.T, ff []errs.Frame) {
 }
 
 func (test StackTest) testFramesMap(t *testing.T, ff []map[string]string) {
+	t.Helper()
+
 	if len(ff) != len(test.stack) {
 		t.Errorf("len(stack) expected %#v, got %#v", len(test.stack), len(ff))
 		return

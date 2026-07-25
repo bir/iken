@@ -12,7 +12,11 @@ import (
 func prefixLetter(letter string) chain.Constructor {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(letter))
+			_, err := w.Write([]byte(letter))
+			if err != nil {
+				panic(err)
+			}
+
 			h.ServeHTTP(w, r)
 		})
 	}

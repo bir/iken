@@ -13,7 +13,7 @@ import (
 
 func testInts(ct int) []int {
 	out := make([]int, ct)
-	for i := 0; i < ct; i++ {
+	for i := range ct {
 		out[i] = i + 1
 	}
 
@@ -21,6 +21,8 @@ func testInts(ct int) []int {
 }
 
 func TestNewFanOut(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
 		workerCount uint
@@ -63,8 +65,6 @@ func TestNewFanOut(t *testing.T) {
 			testInts(16),
 			136,
 		},
-
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

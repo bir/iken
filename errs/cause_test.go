@@ -14,19 +14,19 @@ type CauseTest struct {
 	isNil bool
 }
 
-type NilErr struct{}
+type NilError struct{}
 
-func (t NilErr) Cause() error {
+func (t NilError) Cause() error {
 	return nil
 }
 
-func (t NilErr) Error() string {
+func (t NilError) Error() string {
 	return ""
 }
 
 func TestCause(t *testing.T) {
 	err1 := errors.New("1")
-	nilErr := NilErr{}
+	nilErr := NilError{}
 
 	tests := []CauseTest{
 		{

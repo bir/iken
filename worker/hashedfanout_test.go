@@ -55,9 +55,7 @@ func TestNewHashedFanOut(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hasher := worker.StringHasher(func(i int) string {
-				return strconv.Itoa(i)
-			})
+			hasher := worker.StringHasher(strconv.Itoa)
 
 			w := worker.NewHashedFanOut[int](tt.workerCount, tt.bufferSize, hasher)
 			go func() {

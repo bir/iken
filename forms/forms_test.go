@@ -23,7 +23,7 @@ func TestGetFile(t *testing.T) {
 
 	newRequest := func(notMultipart bool) (*http.Request, error) {
 		if notMultipart {
-			return http.NewRequest("GET", "/ping", nil)
+			return http.NewRequest(http.MethodGet, "/ping", nil)
 		}
 
 		var data bytes.Buffer
@@ -44,7 +44,7 @@ func TestGetFile(t *testing.T) {
 			return nil, fmt.Errorf("error closing writer: for field: %w", err)
 		}
 
-		req := httptest.NewRequest("POST", "/ping", &data)
+		req := httptest.NewRequest(http.MethodPost, "/ping", &data)
 		req.Header.Set("Content-Type", w.FormDataContentType())
 
 		return req, nil
@@ -109,7 +109,7 @@ func TestGetString(t *testing.T) {
 			data = url.Values{key: []string{value}}.Encode()
 		}
 
-		req := httptest.NewRequest("POST", "/ping", strings.NewReader(data))
+		req := httptest.NewRequest(http.MethodPost, "/ping", strings.NewReader(data))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 		return req
@@ -140,7 +140,7 @@ func TestGetString(t *testing.T) {
 			contentType = w.FormDataContentType()
 		}
 
-		req := httptest.NewRequest("POST", "/ping", &data)
+		req := httptest.NewRequest(http.MethodPost, "/ping", &data)
 		req.Header.Set("Content-Type", contentType)
 
 		return req, nil
@@ -174,7 +174,7 @@ func TestGetString(t *testing.T) {
 				params = fmt.Sprintf("?%s=%s", tt.key, tt.value)
 			}
 
-			r := httptest.NewRequest("POST", "/BAR"+params, nil)
+			r := httptest.NewRequest(http.MethodPost, "/BAR"+params, nil)
 
 			got, ok, err := GetString(r.FormValue, tt.form, tt.required)
 
@@ -212,10 +212,10 @@ func TestGetInt32(t *testing.T) {
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", true, 123, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, 0, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, 0, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, 0, true, false},
+		{"simple", httptest.NewRequest(http.MethodGet, "/BAR?foo=123", nil), "foo", true, 123, false, true},
+		{"required missing", httptest.NewRequest(http.MethodGet, "/BAR", nil), "foo", true, 0, true, false},
+		{"not required missing", httptest.NewRequest(http.MethodGet, "/BAR?", nil), "foo", false, 0, false, false},
+		{"bad format", httptest.NewRequest(http.MethodGet, "/BAR?foo=a123", nil), "foo", true, 0, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -238,12 +238,12 @@ func TestGetInt(t *testing.T) {
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", true, 123, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, 0, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, 0, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, 0, true, false},
-		{"max", httptest.NewRequest("GET", "/BAR?foo=9223372036854775807", nil), "foo", true, 9223372036854775807, false, true},
-		{"over max", httptest.NewRequest("GET", "/BAR?foo=19223372036854775807", nil), "foo", true, 0, true, false},
+		{"simple", httptest.NewRequest(http.MethodGet, "/BAR?foo=123", nil), "foo", true, 123, false, true},
+		{"required missing", httptest.NewRequest(http.MethodGet, "/BAR", nil), "foo", true, 0, true, false},
+		{"not required missing", httptest.NewRequest(http.MethodGet, "/BAR?", nil), "foo", false, 0, false, false},
+		{"bad format", httptest.NewRequest(http.MethodGet, "/BAR?foo=a123", nil), "foo", true, 0, true, false},
+		{"max", httptest.NewRequest(http.MethodGet, "/BAR?foo=9223372036854775807", nil), "foo", true, 9223372036854775807, false, true},
+		{"over max", httptest.NewRequest(http.MethodGet, "/BAR?foo=19223372036854775807", nil), "foo", true, 0, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -266,12 +266,12 @@ func TestGetInt64(t *testing.T) {
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", true, 123, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, 0, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, 0, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, 0, true, false},
-		{"max", httptest.NewRequest("GET", "/BAR?foo=9223372036854775807", nil), "foo", true, 9223372036854775807, false, true},
-		{"over max", httptest.NewRequest("GET", "/BAR?foo=19223372036854775807", nil), "foo", true, 0, true, false},
+		{"simple", httptest.NewRequest(http.MethodGet, "/BAR?foo=123", nil), "foo", true, 123, false, true},
+		{"required missing", httptest.NewRequest(http.MethodGet, "/BAR", nil), "foo", true, 0, true, false},
+		{"not required missing", httptest.NewRequest(http.MethodGet, "/BAR?", nil), "foo", false, 0, false, false},
+		{"bad format", httptest.NewRequest(http.MethodGet, "/BAR?foo=a123", nil), "foo", true, 0, true, false},
+		{"max", httptest.NewRequest(http.MethodGet, "/BAR?foo=9223372036854775807", nil), "foo", true, 9223372036854775807, false, true},
+		{"over max", httptest.NewRequest(http.MethodGet, "/BAR?foo=19223372036854775807", nil), "foo", true, 0, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -294,12 +294,12 @@ func TestGetBool(t *testing.T) {
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=true", nil), "foo", true, true, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, false, true, false},
-		{"required null", httptest.NewRequest("GET", "/BAR?foo=null", nil), "foo", true, false, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, false, false, false},
-		{"not required null", httptest.NewRequest("GET", "/BAR?foo=null", nil), "foo", false, false, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, false, true, false},
+		{"simple", httptest.NewRequest(http.MethodGet, "/BAR?foo=true", nil), "foo", true, true, false, true},
+		{"required missing", httptest.NewRequest(http.MethodGet, "/BAR", nil), "foo", true, false, true, false},
+		{"required null", httptest.NewRequest(http.MethodGet, "/BAR?foo=null", nil), "foo", true, false, true, false},
+		{"not required missing", httptest.NewRequest(http.MethodGet, "/BAR?", nil), "foo", false, false, false, false},
+		{"not required null", httptest.NewRequest(http.MethodGet, "/BAR?foo=null", nil), "foo", false, false, false, false},
+		{"bad format", httptest.NewRequest(http.MethodGet, "/BAR?foo=a123", nil), "foo", true, false, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -322,11 +322,11 @@ func TestGetInt32Array(t *testing.T) {
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", true, []int32{123}, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, nil, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, nil, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, nil, true, false},
-		{"large", httptest.NewRequest("GET", "/BAR?foo=1,2,3,4", nil), "foo", true, []int32{1, 2, 3, 4}, false, true},
+		{"simple", httptest.NewRequest(http.MethodGet, "/BAR?foo=123", nil), "foo", true, []int32{123}, false, true},
+		{"required missing", httptest.NewRequest(http.MethodGet, "/BAR", nil), "foo", true, nil, true, false},
+		{"not required missing", httptest.NewRequest(http.MethodGet, "/BAR?", nil), "foo", false, nil, false, false},
+		{"bad format", httptest.NewRequest(http.MethodGet, "/BAR?foo=a123", nil), "foo", true, nil, true, false},
+		{"large", httptest.NewRequest(http.MethodGet, "/BAR?foo=1,2,3,4", nil), "foo", true, []int32{1, 2, 3, 4}, false, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -349,11 +349,11 @@ func TestGetUUIDArray(t *testing.T) {
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=123", nil), "foo", true, []int32{123}, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, nil, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, nil, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, nil, true, false},
-		{"large", httptest.NewRequest("GET", "/BAR?foo=1,2,3,4", nil), "foo", true, []int32{1, 2, 3, 4}, false, true},
+		{"simple", httptest.NewRequest(http.MethodGet, "/BAR?foo=123", nil), "foo", true, []int32{123}, false, true},
+		{"required missing", httptest.NewRequest(http.MethodGet, "/BAR", nil), "foo", true, nil, true, false},
+		{"not required missing", httptest.NewRequest(http.MethodGet, "/BAR?", nil), "foo", false, nil, false, false},
+		{"bad format", httptest.NewRequest(http.MethodGet, "/BAR?foo=a123", nil), "foo", true, nil, true, false},
+		{"large", httptest.NewRequest(http.MethodGet, "/BAR?foo=1,2,3,4", nil), "foo", true, []int32{1, 2, 3, 4}, false, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -376,10 +376,10 @@ func TestGetTime(t *testing.T) {
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=2006-01-02T15:04:05Z", nil), "foo", true, time.Date(2006, 0o1, 0o2, 15, 4, 5, 0, time.UTC), false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, time.Time{}, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, time.Time{}, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=200601021504050700", nil), "foo", true, time.Time{}, true, false},
+		{"simple", httptest.NewRequest(http.MethodGet, "/BAR?foo=2006-01-02T15:04:05Z", nil), "foo", true, time.Date(2006, 0o1, 0o2, 15, 4, 5, 0, time.UTC), false, true},
+		{"required missing", httptest.NewRequest(http.MethodGet, "/BAR", nil), "foo", true, time.Time{}, true, false},
+		{"not required missing", httptest.NewRequest(http.MethodGet, "/BAR?", nil), "foo", false, time.Time{}, false, false},
+		{"bad format", httptest.NewRequest(http.MethodGet, "/BAR?foo=200601021504050700", nil), "foo", true, time.Time{}, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -404,10 +404,10 @@ func TestGetUUID(t *testing.T) {
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=48ab873f-d4fc-4e2b-bf92-9440e431ff54", nil), "foo", true, testUUID, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, uuid.UUID{}, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, uuid.UUID{}, false, false},
-		{"bad format", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, uuid.UUID{}, true, false},
+		{"simple", httptest.NewRequest(http.MethodGet, "/BAR?foo=48ab873f-d4fc-4e2b-bf92-9440e431ff54", nil), "foo", true, testUUID, false, true},
+		{"required missing", httptest.NewRequest(http.MethodGet, "/BAR", nil), "foo", true, uuid.UUID{}, true, false},
+		{"not required missing", httptest.NewRequest(http.MethodGet, "/BAR?", nil), "foo", false, uuid.UUID{}, false, false},
+		{"bad format", httptest.NewRequest(http.MethodGet, "/BAR?foo=a123", nil), "foo", true, uuid.UUID{}, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -452,10 +452,10 @@ func TestGetEnum(t *testing.T) {
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=bbb", nil), "foo", true, testEnumB, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, testEnumUnknown, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, testEnumUnknown, false, false},
-		{"bad value", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, testEnumUnknown, false, true},
+		{"simple", httptest.NewRequest(http.MethodGet, "/BAR?foo=bbb", nil), "foo", true, testEnumB, false, true},
+		{"required missing", httptest.NewRequest(http.MethodGet, "/BAR", nil), "foo", true, testEnumUnknown, true, false},
+		{"not required missing", httptest.NewRequest(http.MethodGet, "/BAR?", nil), "foo", false, testEnumUnknown, false, false},
+		{"bad value", httptest.NewRequest(http.MethodGet, "/BAR?foo=a123", nil), "foo", true, testEnumUnknown, false, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -478,11 +478,11 @@ func TestGetEnumArray(t *testing.T) {
 		wantErr  bool
 		wantOk   bool
 	}{
-		{"simple", httptest.NewRequest("GET", "/BAR?foo=bbb", nil), "foo", true, []TestEnum{testEnumB}, false, true},
-		{"required missing", httptest.NewRequest("GET", "/BAR", nil), "foo", true, nil, true, false},
-		{"not required missing", httptest.NewRequest("GET", "/BAR?", nil), "foo", false, nil, false, false},
-		{"bad value", httptest.NewRequest("GET", "/BAR?foo=a123", nil), "foo", true, []TestEnum{testEnumUnknown}, false, true},
-		{"all", httptest.NewRequest("GET", "/BAR?foo=aaa,bbb,ccc", nil), "foo", true, []TestEnum{testEnumA, testEnumB, testEnumC}, false, true},
+		{"simple", httptest.NewRequest(http.MethodGet, "/BAR?foo=bbb", nil), "foo", true, []TestEnum{testEnumB}, false, true},
+		{"required missing", httptest.NewRequest(http.MethodGet, "/BAR", nil), "foo", true, nil, true, false},
+		{"not required missing", httptest.NewRequest(http.MethodGet, "/BAR?", nil), "foo", false, nil, false, false},
+		{"bad value", httptest.NewRequest(http.MethodGet, "/BAR?foo=a123", nil), "foo", true, []TestEnum{testEnumUnknown}, false, true},
+		{"all", httptest.NewRequest(http.MethodGet, "/BAR?foo=aaa,bbb,ccc", nil), "foo", true, []TestEnum{testEnumA, testEnumB, testEnumC}, false, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

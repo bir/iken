@@ -1,11 +1,18 @@
 package dates
 
 import (
+	"fmt"
 	"strings"
 	"time"
 )
 
 var nowFunc = time.Now
+
+const (
+	EOD = "EOD"
+	EOM = "EOM"
+	EOY = "EOY"
+)
 
 func EndOfDay(t time.Time) time.Time {
 	year, month, day := t.Date()
@@ -67,13 +74,13 @@ func TimeToTime(t time.Time, duration string, location *time.Location) (time.Tim
 	}
 
 	switch anchor {
-	case "EOD":
+	case EOD:
 		t = EndOfDay(t)
 		duration = duration[3:]
-	case "EOM":
+	case EOM:
 		t = EndOfMonth(t)
 		duration = duration[3:]
-	case "EOY":
+	case EOY:
 		t = EndOfYear(t)
 		duration = duration[3:]
 	}
@@ -84,7 +91,7 @@ func TimeToTime(t time.Time, duration string, location *time.Location) (time.Tim
 
 	d, err := time.ParseDuration(duration)
 	if err != nil {
-		return time.Time{}, err //nolint
+		return time.Time{}, fmt.Errorf("TimeToTime:%w", err)
 	}
 
 	return t.Add(d), nil

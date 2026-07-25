@@ -336,6 +336,7 @@ type ClientSecurityGroup[T any] []ClientAuthenticateFunc[T]
 // Auth authenticates a client request with all the authhenticate functions or returns the first failure.
 func (s ClientSecurityGroup[T]) Auth(r *http.Request, innerClient *http.Client, u T) (*http.Client, error) {
 	var err error
+
 	outerClient := innerClient
 	modifiedReq := r.Clone(r.Context())
 
